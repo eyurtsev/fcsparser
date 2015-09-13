@@ -1,19 +1,7 @@
-fcsreader
--------------------
-
-**developer**: `Eugene Yurtsev <http://eyurtsev.mit.edu>`_
-
 Features
 ===================
 
 - **FCS Formats**: Supports FCS 2.0, 3.0, and 3.1
-
-Resources
-===================
-
-- **Documentation:** http://gorelab.bitbucket.org/flowcytometrytools/
-- **Source Repository:** https://github.com/eyurtsev/FlowCytometryTools
-- **Comments or questions:** https://github.com/eyurtsev/FlowCytometryTools/issues
 
 LICENSE
 ===================
