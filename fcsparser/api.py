@@ -5,12 +5,12 @@
 # Thanks to:
 # - Ben Roth : adding a fix for Accuri C6 fcs files.
 
-## 
+##
 # Useful documentation for dtypes in numpy
 # http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.byteswap.html?highlight=byteswap#numpy.ndarray.byteswap
 # http://docs.scipy.org/doc/numpy/user/basics.types.html
 # http://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
-
+from __future__ import division
 
 import sys
 import warnings
@@ -32,13 +32,13 @@ class ParserFeatureNotImplementedError(Exception):
     pass
 
 
-def raise_parser_feature_not_implemented(message):
-    print(("Some of the parser features have not yet been implemented.\n"
-           "If you would like to see this feature implemented, please send a sample FCS file\n"
-           " to the developers.\n"
-           "The following problem was encountered with your FCS file:\n"
-           " {0} ").format(message))
-    raise NotImplementedError(message)
+# def raise_parser_feature_not_implemented(message):
+#     print(("Some of the parser features have not yet been implemented.\n"
+#            "If you would like to see this feature implemented, please send a sample FCS file\n"
+#            " to the developers.\n"
+#            "The following problem was encountered with your FCS file:\n"
+#            " {0} ").format(message))
+#     raise NotImplementedError(message)
 
 
 class FCSParser(object):
@@ -173,13 +173,10 @@ class FCSParser(object):
         if raw_text[-1] != delimiter:
             raw_text = raw_text.strip()
             if raw_text[-1] != delimiter:
-                print('The first two characters were: ')
-                print(repr(raw_text[:2]))
-                print('The last two characters were: ')
-                print(repr(raw_text[-2:]))
-                raise ParserFeatureNotImplementedError(
-                    'Parser expects the same delimiter character '
-                    'in beginning and end of TEXT segment')
+                msg = 'The first two characters were:\n {}. The last two characters were: {}\n' \
+                      'Parser expects the same delimiter character in beginning ' \
+                      'and end of TEXT segment'.format(repr(raw_text[:2]), (repr(raw_text[-2:])))
+                raise ParserFeatureNotImplementedError(msg)
 
         # Below 1:-1 used to remove first and last characters which should be reserved for delimiter
         raw_text_segments = raw_text[1:-1].split(delimiter)
@@ -336,7 +333,7 @@ class FCSParser(object):
 
         # Calculations to figure out data types of each of parameters
         # $PnB specifies the number of bits reserved for a measurement of parameter n
-        bytes_per_par_list = [text['$P{0}B'.format(i)] / 8 for i in self.channel_numbers]
+        bytes_per_par_list = [int(text['$P{0}B'.format(i)] / 8) for i in self.channel_numbers]
 
         par_numeric_type_list = [
             '{endian}{type}{size}'.format(endian=endian, type=conversion_dict[text['$DATATYPE']],
