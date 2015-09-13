@@ -1,7 +1,46 @@
+fcsparser is a python package for reading fcs files. 
+
+Install
+==================
+
+```pip install fcsparser```
+
+Using
+==================
+
+```python
+import fcsparser
+path = fcsparser.test_sample_path
+meta, data = fcsparser.parse(path, reformat_meta=True)
+
+```
+
+A more detailed example can be found here: http://nbviewer.ipython.org/github/eyurtsev/fcsparser/blob/master/doc/fcsparser_example.ipynb
+
+
 Features
 ===================
 
+- **python**: 2.7, 3.4
 - **FCS Formats**: Supports FCS 2.0, 3.0, and 3.1
+- **FCS Machines**: BD FACSCalibur, BD LSRFortessa, BD LSR-II, MiltenyiBiotec MACSQuant VYB
+
+Contributing
+=================
+
+Pull requests are greatly appreciated. Missing features include:
+
+1. the ability to apply compensation.
+2. a set of transformations (hlog, logicle, etc.) that can be applied.
+
+Also fcs files from more devices and more formats are greatly appreciated, especially if the parser fails for them!
+
+Resources
+==================
+
+- **Documentation:** https://github.com/eyurtsev/fcsparser
+- **Source Repository:** https://github.com/eyurtsev/fcsparser
+- **Comments or questions:** https://github.com/eyurtsev/fcsparser/issues
 
 LICENSE
 ===================
