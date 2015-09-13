@@ -42,10 +42,8 @@ class ParserFeatureNotImplementedError(Exception):
 
 
 class FCSParser(object):
-    """
-    A Parser for .fcs files.
-    Should work for FCS 3.0
-    May work for other FCS formats (2.0, 3.1)
+    """A Parser for .fcs files.
+    Should work for many FCS 2.0, 3.0, 3.1
 
     self.annotation: a dictionary holding the parsed content of the TEXT segment
                      In addition, a key called __header__ has been added to this dictionary
@@ -165,6 +163,7 @@ class FCSParser(object):
         # There are some differences in how the 
         file_handle.seek(header['text start'], 0)
         raw_text = file_handle.read(header['text end'] - header['text start'] + 1)
+        raw_text = raw_text.decode('utf-8')
 
         #####
         # Parse the TEXT segment of the FCS file into a python dictionary
