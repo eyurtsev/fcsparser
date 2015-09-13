@@ -3,17 +3,14 @@ fcsparser is a python package for reading fcs files.
 Install
 ==================
 
-```pip install fcsparser```
+    $ pip install fcsparser
 
 Using
 ==================
 
-```python
-import fcsparser
-path = fcsparser.test_sample_path
-meta, data = fcsparser.parse(path, reformat_meta=True)
-
-```
+    >>> import fcsparser
+    >>> path = fcsparser.test_sample_path
+    >>> meta, data = fcsparser.parse(path, reformat_meta=True)
 
 A more detailed example can be found here: http://nbviewer.ipython.org/github/eyurtsev/fcsparser/blob/master/doc/fcsparser_example.ipynb
 
