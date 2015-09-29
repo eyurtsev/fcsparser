@@ -18,7 +18,7 @@ A more detailed example can be found here: http://nbviewer.ipython.org/github/ey
 Features
 ===================
 
-- **python**: 2.7, 3.4
+- **python**: 2.7, 3.3, 3.4
 - **FCS Formats**: Supports FCS 2.0, 3.0, and 3.1
 - **FCS Machines**: BD FACSCalibur, BD LSRFortessa, BD LSR-II, MiltenyiBiotec MACSQuant VYB
 
