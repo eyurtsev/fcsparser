@@ -353,7 +353,8 @@ class FCSParser(object):
             # values saved in mixed data formats
             dtype = ','.join(par_numeric_type_list)
             data = numpy.fromfile(file_handle, dtype=dtype, count=num_events)
-            data.dtype.names = self.get_channel_names()
+            names = self.get_channel_names()
+            data.dtype.names = tuple([name.encode('ascii', errors='replace') for name in names])
         else:
             # values saved in a single data format
             dtype = par_numeric_type_list[0]
