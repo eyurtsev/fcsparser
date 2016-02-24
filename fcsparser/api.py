@@ -263,9 +263,9 @@ class FCSParser(object):
                 nextdata = int(text['$NEXTDATA'])
                 enddata = int(text['$ENDDATA'])
                 if nextdata != enddata+1:
-                    raise_parser_feature_not_implemented('Not implemented $NEXTDATA is not 0 and is not $ENDDATA+1')
+                    ParserFeatureNotImplementedError('Not implemented $NEXTDATA is not 0 and is not $ENDDATA+1')
             else:
-                raise_parser_feature_not_implemented('Not implemented $NEXTDATA is not 0 and is not $ENDDATA+1')
+                ParserFeatureNotImplementedError('Not implemented $NEXTDATA is not 0 and is not $ENDDATA+1')
 
         if '$MODE' not in text or text['$MODE'] != 'L':
             raise ParserFeatureNotImplementedError('Mode not implemented')
