@@ -258,8 +258,14 @@ class FCSParser(object):
         text = self.annotation
         keys = text.keys()
 
-        if '$NEXTDATA' in text and text['$NEXTDATA'] != 0:
-            raise ParserFeatureNotImplementedError('Not implemented $NEXTDATA is not 0')
+        if '$NEXTDATA' in text:
+            if text['$NEXTDATA'] != 0 and '$ENDDATA' in text:
+                nextdata = int(text['$NEXTDATA'])
+                enddata = int(text['$ENDDATA'])
+                if nextdata != enddata+1:
+                    raise_parser_feature_not_implemented('Not implemented $NEXTDATA is not 0 and is not $ENDDATA+1')
+            else:
+                raise_parser_feature_not_implemented('Not implemented $NEXTDATA is not 0 and is not $ENDDATA+1')
 
         if '$MODE' not in text or text['$MODE'] != 'L':
             raise ParserFeatureNotImplementedError('Mode not implemented')
