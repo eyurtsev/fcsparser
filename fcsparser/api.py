@@ -16,6 +16,7 @@ import sys
 import warnings
 import string
 import os
+import logging
 
 import numpy
 
@@ -58,12 +59,14 @@ class FCSParser(object):
         self.channel_names_alternate holds the alternate names of the channels
     """
 
-    def __init__(self, path, read_data=True, channel_naming='$PnS'):
+    def __init__(self, path, dataset_start=0, read_data=True, channel_naming='$PnS'):
         """
         Parameters
         ----------
         path : str
             Path of .fcs file
+        dataset_start : integer
+            Start of the dataset
         read_data : bool
             If True, reads the data immediately.
             Otherwise, use read_data method to read in the data from the fcs file.
@@ -89,10 +92,13 @@ class FCSParser(object):
         self._channel_naming = channel_naming
         self.channel_names_s = []
         self.channel_names_n = []
+        self._dataset_start = dataset_start;
 
         # Attributes parsed from fcs file
         self._data_start = -1
         self._data_end = -1
+        self._text_start = -1
+        self._text_end = -1
         self.channel_numbers = []
         self._analysis = ''
 
@@ -105,7 +111,13 @@ class FCSParser(object):
         self.path = path
 
         with open(path, 'rb') as f:
+            f.seek(dataset_start,0)
             self.read_header(f)
+            if(self._dataset_start):
+                self._data_start=self._data_start+self._dataset_start;
+                self._data_end=self._data_end+self._dataset_start;
+                self._text_start=self._text_start+self._dataset_start;
+                self._text_end=self._text_end+self._dataset_start;
             self.read_text(f)
             if read_data:
                 self.read_data(f)
@@ -141,6 +153,8 @@ class FCSParser(object):
 
         self._data_start = header['data start']
         self._data_end = header['data start']
+        self._text_start = header['text start']
+        self._text_end = header['text end']
 
         if header['analysis start'] != 0:
             warnings.warn(
@@ -161,8 +175,8 @@ class FCSParser(object):
         #####
         # Read in the TEXT segment of the FCS file
         # There are some differences in how the 
-        file_handle.seek(header['text start'], 0)
-        raw_text = file_handle.read(header['text end'] - header['text start'] + 1)
+        file_handle.seek(self._text_start, 0)
+        raw_text = file_handle.read(self._text_end - self._text_start + 1)
         raw_text = raw_text.decode('utf-8')
 
         #####
@@ -246,7 +260,7 @@ class FCSParser(object):
         start = self.annotation['__header__']['analysis start']
         end = self.annotation['__header__']['analysis end']
         if start != 0 and end != 0:
-            file_handle.seek(start, 0)
+            file_handle.seek(start+self._dataset_start, 0)
             self._analysis = file_handle.read(end - start)
         else:
             self._analysis = ''
@@ -259,13 +273,15 @@ class FCSParser(object):
         keys = text.keys()
 
         if '$NEXTDATA' in text:
-            if text['$NEXTDATA'] != 0 and '$ENDDATA' in text:
-                nextdata = int(text['$NEXTDATA'])
-                enddata = int(text['$ENDDATA'])
-                if nextdata != enddata+1:
-                    ParserFeatureNotImplementedError('Not implemented $NEXTDATA is not 0 and is not $ENDDATA+1')
-            else:
-                ParserFeatureNotImplementedError('Not implemented $NEXTDATA is not 0 and is not $ENDDATA+1')
+           if int(text['$NEXTDATA']) != 0:
+                if '$ENDDATA' in text:
+                    nextdata = int(text['$NEXTDATA'])
+                    enddata = int(text['$ENDDATA'])
+                    if nextdata != enddata+1:
+                        raise ParserFeatureNotImplementedError('Not implemented $NEXTDATA is not 0 or $NEXTDATA != $ENDDATA+1 ')
+                else:
+                    logging.error('$NEXTDATA is not 0, this file has multiple datasets')
+
 
         if '$MODE' not in text or text['$MODE'] != 'L':
             raise ParserFeatureNotImplementedError('Mode not implemented')
@@ -430,7 +446,7 @@ class FCSParser(object):
         meta['_channel_names_'] = self.get_channel_names()
 
 
-def parse(path, meta_data_only=False, output_format='DataFrame', compensate=False,
+def parse(path, dataset_start=0, meta_data_only=False, output_format='DataFrame', compensate=False,
               channel_naming='$PnS',
               reformat_meta=False):
     """
@@ -440,6 +456,8 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
     ----------
     path : str
         Path of .fcs file
+    dataset_start : integer
+        Start of dataset in the file (multi-dataset)
     meta_data_only : bool
         If True, the parse_fcs only returns the meta_data (the TEXT segment of the FCS file)
     output_format : 'DataFrame' | 'ndarray'
@@ -488,7 +506,7 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
 
     read_data = not meta_data_only
 
-    parsed_fcs = FCSParser(path, read_data=read_data, channel_naming=channel_naming)
+    parsed_fcs = FCSParser(path, dataset_start=dataset_start, read_data=read_data, channel_naming=channel_naming)
 
     if reformat_meta:
         parsed_fcs.reformat_meta()
