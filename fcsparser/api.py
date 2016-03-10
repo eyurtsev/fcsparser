@@ -227,7 +227,7 @@ class FCSParser(object):
         # unused currently but keep for debugging
         # keys_encoding_range = ['$P{0}R'.format(i) for i in self.channel_numbers]
 
-        add_keys_to_convert_to_int = ['$NEXTDATA', '$ENDDATA', '$PAR', '$TOT']
+        add_keys_to_convert_to_int = ['$NEXTDATA', '$PAR', '$TOT']
 
         keys_to_convert_to_int = keys_encoding_bits + add_keys_to_convert_to_int
 
@@ -275,7 +275,7 @@ class FCSParser(object):
         if '$NEXTDATA' in text and text['$NEXTDATA'] != 0:
             if '$ENDDATA' in text:
                 nextdata = text['$NEXTDATA']
-                enddata = text['$ENDDATA']
+                enddata = int(text['$ENDDATA'])
                 if nextdata != enddata+1:
                     logging.error('This file has multiple datasets, $NEXTDATA must equal to $ENDDATA+1')
                 else:
