@@ -12,8 +12,11 @@ import unittest
 import numpy
 from numpy import array
 import os
+import filecmp
 
 from fcsparser import parse as parse_fcs
+from fcsparser.api import FCSParser as FCSParser
+from testfixtures import TempDirectory
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 _ROOT = os.path.join(_ROOT, 'data', 'FlowCytometers')
@@ -26,7 +29,8 @@ file_formats = {
                 'mq fcs 3.1' : os.path.join(_ROOT, 'MiltenyiBiotec', 'FCS3.1', 'EY_2013-07-19_PBS_FCS_3.1_Well_A1.001.fcs'),
                 'LSR II fcs 3.0' :  os.path.join(_ROOT, 'HTS_BD_LSR-II', 'HTS_BD_LSR_II_Mixed_Specimen_001_D6_D06.fcs'),
                 'Fortessa fcs 3.0': os.path.join(_ROOT, 'Fortessa', 'FCS_3.0_Fortessa_PBS_Specimen_001_A1_A01.fcs'),
-                'large fake fcs':   os.path.join(_ROOT, 'fake_large_fcs', 'fake_large_fcs.fcs')
+                'large fake fcs':   os.path.join(_ROOT, 'fake_large_fcs', 'fake_large_fcs.fcs'),
+                'IntelliCyt iQue' : os.path.join(_ROOT, 'IntelliCytiQue', 'Well_A01.fcs')
                }
 
 # Used for checking other issues with FCS files
@@ -346,6 +350,26 @@ class TestFCSReader(unittest.TestCase):
                   2.49599991e+01,   4.91399994e+01,   7.23799973e+01,
                  -1.29600010e+01,   1.00000001e-01]], dtype=numpy.float32)
         self.assertTrue(check_data_segment('large fake fcs', values))
+
+    def test_reading_and_writing_fcs_file(self):
+        """ Reading a FCS file and writing to disk the same """
+        fname = file_formats['IntelliCyt iQue']
+        fcs_parser = FCSParser(fname)
+        with TempDirectory() as d:
+            fcs_parser.write_to_file(os.path.join(d.path, 'test_fcs_file.fcs'))
+            filecmp.cmp(fname, os.path.join(d.path, 'test_fcs_file.fcs'))
+
+    def test_cloning_an_fcs_file_with_a_subset_of_data(self):
+        """ Reading a FCS file, modifying and writing to disk """
+        fname = file_formats['IntelliCyt iQue']
+        fcs_parser = FCSParser(fname)
+        # Only save a subset of the data points
+        new_fcs_parser = fcs_parser.clone(data=fcs_parser.data[:1000])
+
+        with TempDirectory() as d:
+            new_fcs_parser.write_to_file(os.path.join(d.path, 'test_fcs_file.fcs'))
+            new_fcs_parser = FCSParser(os.path.join(d.path, 'test_fcs_file.fcs'))
+            self.assertTrue(new_fcs_parser.data.shape == fcs_parser.data[:1000].shape)
 
 if __name__ == '__main__':
     import nose
