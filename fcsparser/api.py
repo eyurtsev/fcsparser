@@ -472,8 +472,8 @@ class FCSParser(object):
     def _data_to_byte_string(self):
         # this conversion currenly only supports data points as single precision floating point values,
         # $DATATYPE F per the fcs standard http://isac-net.org/PDFS/90/9090600d-19be-460d-83fc-f8a8b004e0f9.pdf
-        if self.annotation['$DATATYPE'] != 'F':
-            raise exception('Only fcs files with $DATATYPE F (single precision floating point values) accepted')
+        if self.annotation['$DATATYPE'] != 'F' and self.annotation['$DATATYPE'] != 'I':
+            raise exception('Only fcs files with $DATATYPE F (single precision floating point values) OR I accepted')
 
         data_byte_string = "\x0C"
         for row in self._data:
