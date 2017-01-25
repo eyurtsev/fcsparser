@@ -47,6 +47,8 @@ setup(
 
     install_requires=[
         "setuptools",
+        "numpy",
+        "pandas"
     ],
 
     classifiers=[
