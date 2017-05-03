@@ -102,8 +102,8 @@ class FCSParser(object):
 
         self.annotation = {}
 
+        self.path = path
         if path:
-            self.path = path
             with open(path, 'rb') as f:
                 self.load_file(f, read_data)
 
