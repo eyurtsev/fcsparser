@@ -12,11 +12,10 @@
 # http://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
 from __future__ import division
 
+import string
 import sys
 import warnings
-import string
-import os
-import cStringIO
+from io import BytesIO
 
 import numpy
 
@@ -119,7 +118,7 @@ class FCSParser(object):
 
     @staticmethod
     def from_data(data):
-        file_handle = cStringIO.StringIO(data)
+        file_handle = BytesIO(data)
         obj = FCSParser()
         obj.load_file(file_handle)
         return obj
@@ -174,7 +173,7 @@ class FCSParser(object):
 
         #####
         # Read in the TEXT segment of the FCS file
-        # There are some differences in how the 
+        # There are some differences in how the
         file_handle.seek(header['text start'], 0)
         raw_text = file_handle.read(header['text end'] - header['text start'] + 1)
         try:
@@ -373,16 +372,16 @@ class FCSParser(object):
         if len(set(par_numeric_type_list)) > 1:
             # values saved in mixed data formats
             dtype = ','.join(par_numeric_type_list)
-            data = numpy.fromfile(file_handle, dtype=dtype, count=num_events)
+            data = fromfile(file_handle, dtype=dtype, count=num_events)
             names = self.get_channel_names()
             data.dtype.names = tuple([name.encode('ascii', errors='replace') for name in names])
         else:
             # values saved in a single data format
             dtype = par_numeric_type_list[0]
-            data = numpy.fromfile(file_handle, dtype=dtype, count=num_events * num_pars)
+            data = fromfile(file_handle, dtype=dtype, count=num_events * num_pars)
             data = data.reshape((num_events, num_pars))
         ##
-        # Convert to native byte order 
+        # Convert to native byte order
         # This is needed for working with pandas datastructures
         native_code = '<' if (sys.byteorder == 'little') else '>'
         if endian != native_code:
@@ -525,3 +524,11 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
         return meta, parsed_fcs.data
     else:
         raise ValueError("The output_format must be either 'ndarray' or 'DataFrame'")
+
+
+def fromfile(file, *args, **kwargs):
+    """ Wrapper around np.fromfile to support BytesIO fake files."""
+    if isinstance(file, BytesIO):
+        return numpy.fromstring(file.getvalue(), *args, **kwargs)
+    else:
+        return numpy.fromfile(file, *args, **kwargs)
