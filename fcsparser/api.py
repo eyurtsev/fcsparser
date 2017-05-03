@@ -16,6 +16,7 @@ import sys
 import warnings
 import string
 import os
+import cStringIO
 
 import numpy
 
@@ -58,7 +59,7 @@ class FCSParser(object):
         self.channel_names_alternate holds the alternate names of the channels
     """
 
-    def __init__(self, path, read_data=True, channel_naming='$PnS'):
+    def __init__(self, path=None, read_data=True, channel_naming='$PnS'):
         """
         Parameters
         ----------
@@ -95,20 +96,33 @@ class FCSParser(object):
         self._data_end = -1
         self.channel_numbers = []
         self._analysis = ''
-
-        self._file_size = os.path.getsize(path)
+        self._file_size = 0
 
         if channel_naming not in ('$PnN', '$PnS'):
             raise ValueError("channel_naming must be either '$PnN' or '$PnS")
 
         self.annotation = {}
-        self.path = path
 
-        with open(path, 'rb') as f:
-            self.read_header(f)
-            self.read_text(f)
-            if read_data:
-                self.read_data(f)
+        if path:
+            self.path = path
+            with open(path, 'rb') as f:
+                self.load_file(f, read_data)
+
+    def load_file(self, file_handle, read_data=True):
+        file_handle.seek(0, 2)
+        self._file_size = file_handle.tell()
+        file_handle.seek(0)
+        self.read_header(file_handle)
+        self.read_text(file_handle)
+        if read_data:
+            self.read_data(file_handle)
+
+    @staticmethod
+    def from_data(data):
+        file_handle = cStringIO.StringIO(data)
+        obj = FCSParser()
+        obj.load_file(file_handle)
+        return obj
 
     def read_header(self, file_handle):
         """
@@ -430,6 +444,12 @@ class FCSParser(object):
         meta['_channels_'] = df
         meta['_channel_names_'] = self.get_channel_names()
 
+    # Constructs Pandas dataframe
+    def dataframe(self):
+        data = self.data
+        channel_names = self.get_channel_names()
+        return pd.DataFrame(data, columns=channel_names)
+
 
 def parse(path, meta_data_only=False, output_format='DataFrame', compensate=False,
               channel_naming='$PnS',
@@ -499,11 +519,7 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
     if meta_data_only:
         return meta
     elif output_format == 'DataFrame':
-        # Constructs pandas DF object
-        data = parsed_fcs.data
-        channel_names = parsed_fcs.get_channel_names()
-        data = pd.DataFrame(data, columns=channel_names)
-        return meta, data
+        return meta, parsed_fcs.dataframe()
     elif output_format == 'ndarray':
         # Constructs numpy matrix
         return meta, parsed_fcs.data
