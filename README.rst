@@ -20,6 +20,17 @@ Using
     >>> path = fcsparser.test_sample_path
     >>> meta, data = fcsparser.parse(path, reformat_meta=True)
 
+Using to clone an fcs file and modify data
+
+    >>> from fcsparser.api import FCSParser
+    >>> path = fcsparse.test_sample_path
+    >>> fcs_file = FCSParser(path)
+    >>> subset_fcs_file = fcs_file.clone(data=fcs_file.data[:1000]
+    >>> subset_fcs_file.write_to_file('/tmp/subset_fcs_file.fcs')
+
+If no data is passed in to `clone`, the entirety of the existing data will be used
+in the clone.
+
 A more detailed example can be found here: http://nbviewer.ipython.org/github/eyurtsev/fcsparser/blob/master/doc/fcsparser_example.ipynb
 
 
