@@ -118,6 +118,7 @@ class FCSParser(object):
 
     @staticmethod
     def from_data(data):
+        '''Loads an FCS file from a bytes-like object'''
         file_handle = BytesIO(data)
         obj = FCSParser()
         obj.load_file(file_handle)
