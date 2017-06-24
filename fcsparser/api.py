@@ -373,13 +373,13 @@ class FCSParser(object):
         if len(set(par_numeric_type_list)) > 1:
             # values saved in mixed data formats
             dtype = ','.join(par_numeric_type_list)
-            data = fromfile(file_handle, dtype=dtype, count=num_events)
+            data = fromfile(file_handle, dtype, num_events)
             names = self.get_channel_names()
             data.dtype.names = tuple([name.encode('ascii', errors='replace') for name in names])
         else:
             # values saved in a single data format
             dtype = par_numeric_type_list[0]
-            data = fromfile(file_handle, dtype=dtype, count=num_events * num_pars)
+            data = fromfile(file_handle, dtype, num_events * num_pars)
             data = data.reshape((num_events, num_pars))
         ##
         # Convert to native byte order
@@ -527,9 +527,10 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
         raise ValueError("The output_format must be either 'ndarray' or 'DataFrame'")
 
 
-def fromfile(file, *args, **kwargs):
-    """ Wrapper around np.fromfile to support BytesIO fake files."""
-    if isinstance(file, BytesIO):
-        return numpy.fromstring(file.getvalue(), *args, **kwargs)
-    else:
-        return numpy.fromfile(file, *args, **kwargs)
+def fromfile(file, dtype, count, *args, **kwargs):
+    """Wrapper around np.fromfile to support any file-like object"""
+
+    try:
+        return numpy.fromfile(file, dtype=dtype, count=count, *args, **kwargs)
+    except (TypeError, IOError):
+        return numpy.frombuffer(file.read(count * numpy.dtype(dtype).itemsize), dtype=dtype, count=count, *args, **kwargs)
