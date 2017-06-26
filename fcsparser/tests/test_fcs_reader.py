@@ -386,8 +386,6 @@ class TestFCSReader(unittest.TestCase):
         data = open(fname, 'rb').read()
         matrix = FCSParser.from_data(data).data
         diff = numpy.abs(values - matrix[0:4, :])
-        import pdb
-        pdb.set_trace()
         self.assertTrue(numpy.all(diff < 10**-8))
 
 
