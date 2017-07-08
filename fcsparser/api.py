@@ -12,10 +12,10 @@
 # http://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
 from __future__ import division
 
+import string
 import sys
 import warnings
-import string
-import os
+from io import BytesIO
 
 import numpy
 
@@ -58,7 +58,7 @@ class FCSParser(object):
         self.channel_names_alternate holds the alternate names of the channels
     """
 
-    def __init__(self, path, read_data=True, channel_naming='$PnS'):
+    def __init__(self, path=None, read_data=True, channel_naming='$PnS'):
         """
         Parameters
         ----------
@@ -95,20 +95,34 @@ class FCSParser(object):
         self._data_end = -1
         self.channel_numbers = []
         self._analysis = ''
-
-        self._file_size = os.path.getsize(path)
+        self._file_size = 0
 
         if channel_naming not in ('$PnN', '$PnS'):
             raise ValueError("channel_naming must be either '$PnN' or '$PnS")
 
         self.annotation = {}
-        self.path = path
 
-        with open(path, 'rb') as f:
-            self.read_header(f)
-            self.read_text(f)
-            if read_data:
-                self.read_data(f)
+        self.path = path
+        if path:
+            with open(path, 'rb') as f:
+                self.load_file(f, read_data)
+
+    def load_file(self, file_handle, read_data=True):
+        file_handle.seek(0, 2)
+        self._file_size = file_handle.tell()
+        file_handle.seek(0)
+        self.read_header(file_handle)
+        self.read_text(file_handle)
+        if read_data:
+            self.read_data(file_handle)
+
+    @staticmethod
+    def from_data(data):
+        '''Loads an FCS file from a bytes-like object'''
+        file_handle = BytesIO(data)
+        obj = FCSParser()
+        obj.load_file(file_handle)
+        return obj
 
     def read_header(self, file_handle):
         """
@@ -160,7 +174,7 @@ class FCSParser(object):
 
         #####
         # Read in the TEXT segment of the FCS file
-        # There are some differences in how the 
+        # There are some differences in how the
         file_handle.seek(header['text start'], 0)
         raw_text = file_handle.read(header['text end'] - header['text start'] + 1)
         try:
@@ -359,16 +373,16 @@ class FCSParser(object):
         if len(set(par_numeric_type_list)) > 1:
             # values saved in mixed data formats
             dtype = ','.join(par_numeric_type_list)
-            data = numpy.fromfile(file_handle, dtype=dtype, count=num_events)
+            data = fromfile(file_handle, dtype, num_events)
             names = self.get_channel_names()
             data.dtype.names = tuple([name.encode('ascii', errors='replace') for name in names])
         else:
             # values saved in a single data format
             dtype = par_numeric_type_list[0]
-            data = numpy.fromfile(file_handle, dtype=dtype, count=num_events * num_pars)
+            data = fromfile(file_handle, dtype, num_events * num_pars)
             data = data.reshape((num_events, num_pars))
         ##
-        # Convert to native byte order 
+        # Convert to native byte order
         # This is needed for working with pandas datastructures
         native_code = '<' if (sys.byteorder == 'little') else '>'
         if endian != native_code:
@@ -429,6 +443,12 @@ class FCSParser(object):
         df.index.name = 'Channel Number'
         meta['_channels_'] = df
         meta['_channel_names_'] = self.get_channel_names()
+
+    # Constructs Pandas dataframe
+    def dataframe(self):
+        data = self.data
+        channel_names = self.get_channel_names()
+        return pd.DataFrame(data, columns=channel_names)
 
 
 def parse(path, meta_data_only=False, output_format='DataFrame', compensate=False,
@@ -499,13 +519,18 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
     if meta_data_only:
         return meta
     elif output_format == 'DataFrame':
-        # Constructs pandas DF object
-        data = parsed_fcs.data
-        channel_names = parsed_fcs.get_channel_names()
-        data = pd.DataFrame(data, columns=channel_names)
-        return meta, data
+        return meta, parsed_fcs.dataframe()
     elif output_format == 'ndarray':
         # Constructs numpy matrix
         return meta, parsed_fcs.data
     else:
         raise ValueError("The output_format must be either 'ndarray' or 'DataFrame'")
+
+
+def fromfile(file, dtype, count, *args, **kwargs):
+    """Wrapper around np.fromfile to support any file-like object"""
+
+    try:
+        return numpy.fromfile(file, dtype=dtype, count=count, *args, **kwargs)
+    except (TypeError, IOError):
+        return numpy.frombuffer(file.read(count * numpy.dtype(dtype).itemsize), dtype=dtype, count=count, *args, **kwargs)
