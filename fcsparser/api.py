@@ -100,7 +100,7 @@ class FCSParser(object):
         self._file_size = 0
 
         if channel_naming not in ('$PnN', '$PnS'):
-            raise ValueError('channel_naming must be either "$PnN" or "$PnS"')
+            raise ValueError(u'channel_naming must be either "$PnN" or "$PnS"')
 
         self.annotation = {}
 
@@ -160,11 +160,11 @@ class FCSParser(object):
         # Checking that the location of the TEXT segment is specified
         for k in ['text start', 'text end']:
             if header[k] == 0:
-                raise ValueError('The FCS file "{}" seems corrupted. (Parser cannot locate '
-                                 'information about the "{}" segment.)'.format(self.path, k))
+                raise ValueError(u'The FCS file "{}" seems corrupted. (Parser cannot locate '
+                                 u'information about the "{}" segment.)'.format(self.path, k))
             elif header[k] > self._file_size:
-                raise ValueError('The FCS file "{}" is corrupted. "{}" segment '
-                                 'is larger than file size'.format(self.path, k))
+                raise ValueError(u'The FCS file "{}" is corrupted. "{}" segment '
+                                 u'is larger than file size'.format(self.path, k))
             else:
                 # All OK
                 pass
@@ -173,8 +173,8 @@ class FCSParser(object):
         self._data_end = header['data start']
 
         if header['analysis start'] != 0:
-            warnings.warn('There appears to be some information in the ANALYSIS segment of file '
-                          '{0}. However, it might not be read correctly.'.format(self.path))
+            warnings.warn(u'There appears to be some information in the ANALYSIS segment of file '
+                          u'{0}. However, it might not be read correctly.'.format(self.path))
 
         self.annotation['__header__'] = header
 
@@ -208,7 +208,7 @@ class FCSParser(object):
             if raw_text[-1] != delimiter:
                 msg = (u'The first two characters were:\n {}. The last two characters were: {}\n'
                        u'Parser expects the same delimiter character in beginning '
-                       u'and end of TEXT segment'.format(repr(raw_text[:2]), (repr(raw_text[-2:]))))
+                       u'and end of TEXT segment'.format(raw_text[:2], raw_text[-2:]))
                 raise ParserFeatureNotImplementedError(msg)
 
         # Below 1:-1 used to remove first and last characters which should be reserved for delimiter
@@ -284,17 +284,17 @@ class FCSParser(object):
         keys = text.keys()
 
         if '$NEXTDATA' in text and text['$NEXTDATA'] != 0:
-            raise ParserFeatureNotImplementedError('Not implemented $NEXTDATA is not 0')
+            raise ParserFeatureNotImplementedError(u'Not implemented $NEXTDATA is not 0')
 
         if '$MODE' not in text or text['$MODE'] != 'L':
-            raise ParserFeatureNotImplementedError('Mode not implemented')
+            raise ParserFeatureNotImplementedError(u'Mode not implemented')
 
         if '$P0B' in keys:
-            raise ParserFeatureNotImplementedError('Not expecting a parameter starting at 0')
+            raise ParserFeatureNotImplementedError(u'Not expecting a parameter starting at 0')
 
         if text['$BYTEORD'] not in ["1,2,3,4", "4,3,2,1", "1,2", "2,1"]:
-            raise ParserFeatureNotImplementedError(
-                '$BYTEORD {} not implemented'.format(text['$BYTEORD']))
+            raise ParserFeatureNotImplementedError(u'$BYTEORD {} '
+                                                   u'not implemented'.format(text['$BYTEORD']))
 
     def get_channel_names(self):
         """Get list of channel names. Raises a warning if the names are not unique."""
@@ -310,14 +310,14 @@ class FCSParser(object):
             channel_names = channel_names_alternate
 
         if len(set(channel_names)) != len(channel_names):
-            msg = ('The default channel names (defined by the {} '
-                   'parameter in the FCS file) were not unique. To avoid '
-                   'problems in downstream analysis, the channel names '
-                   'have been switched to the alternate channel names '
-                   'defined in the FCS file. To avoid '
-                   'seeing this warning message, explicitly instruct '
-                   'the FCS parser to use the alternate channel names by '
-                   'specifying the channel_naming parameter.')
+            msg = (u'The default channel names (defined by the {} '
+                   u'parameter in the FCS file) were not unique. To avoid '
+                   u'problems in downstream analysis, the channel names '
+                   u'have been switched to the alternate channel names '
+                   u'defined in the FCS file. To avoid '
+                   u'seeing this warning message, explicitly instruct '
+                   u'the FCS parser to use the alternate channel names by '
+                   u'specifying the channel_naming parameter.')
             msg = msg.format(self._channel_naming)
             warnings.warn(msg)
             channel_names = channel_names_alternate
@@ -330,9 +330,8 @@ class FCSParser(object):
         text = self.annotation
 
         if (self._data_start > self._file_size) or (self._data_end > self._file_size):
-            raise ValueError(
-                "The FCS file '{}' is corrupted. Part of the data segment is missing.".format(
-                    self.path))
+            raise ValueError(u'The FCS file "{}" is corrupted. Part of the data segment '
+                             u'is missing.'.format(self.path))
 
         num_events = text['$TOT']  # Number of events recorded
         num_pars = text['$PAR']  # Number of parameters recorded
@@ -421,8 +420,10 @@ class FCSParser(object):
                     channel_properties.append(key[3:])
 
         # Capture all the channel information in a list of lists -- used to create a data frame
-        channel_matrix = [[meta.get('$P{0}{1}'.format(ch, p)) for p in channel_properties] for ch in
-                          self.channel_numbers]
+        channel_matrix = [
+            [meta.get('$P{0}{1}'.format(ch, p)) for p in channel_properties]
+            for ch in self.channel_numbers
+        ]
 
         # Remove this information from the dictionary
         for ch in self.channel_numbers:
@@ -497,14 +498,13 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
     meta = parse_fcs(fname, meta_data_only=True)
     meta, data_pandas = parse_fcs(fname, meta_data_only=False, output_format='DataFrame')
     meta, data_numpy  = parse_fcs(fname, meta_data_only=False, output_format='ndarray')
-
     """
     if compensate:
-        raise ParserFeatureNotImplementedError("Compensation has not been implemented yet.")
+        raise ParserFeatureNotImplementedError(u'Compensation has not been implemented yet.')
 
     if reformat_meta or (output_format == 'DataFrame'):
         if pd is None:
-            raise ImportError('You do not have pandas installed.')
+            raise ImportError(u'You do not have pandas installed.')
 
     read_data = not meta_data_only
 
@@ -523,4 +523,4 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
         # Constructs numpy matrix
         return meta, parsed_fcs.data
     else:
-        raise ValueError("The output_format must be either 'ndarray' or 'DataFrame'")
+        raise ValueError(u'The output_format must be either "ndarray" or "DataFrame".')
