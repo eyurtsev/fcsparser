@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 """
+Parser for FCS 2.0, 3.0, 3.1 files. Python 2/3 compatible.
+`
 Distributed under the MIT License.
-
-Thanks to:
-- Ben Roth : adding a fix for Accuri C6 fcs files.
 
 Useful documentation for dtypes in numpy
 http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.byteswap.html?highlight=byteswap#numpy.ndarray.byteswap  # noqa
