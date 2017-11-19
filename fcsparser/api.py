@@ -45,7 +45,7 @@ class ParserFeatureNotImplementedError(Exception):
 
 
 class FCSParser(object):
-    def __init__(self, path=None, read_data=True, channel_naming='$PnS'):
+    def __init__(self, path=None, read_data=True, channel_naming='$PnS', data_set=0):
         """Parse FCS files.
 
         Compatible with most FCS 2.0, 3.0, 3.1 files.
@@ -107,15 +107,30 @@ class FCSParser(object):
 
         if path:
             with open(path, 'rb') as f:
-                self.load_file(f, read_data)
+                self.load_file(f, data_set, read_data)
 
-    def load_file(self, file_handle, read_data=True):
+    def load_file(self, file_handle, data_set=0, read_data=True):
         """"""
         file_handle.seek(0, 2)
         self._file_size = file_handle.tell()
         file_handle.seek(0)
-        self.read_header(file_handle)
-        self.read_text(file_handle)
+        data_segments = 0
+        # seek the correct data set in fcs
+        nextdata = 0
+        while data_segments <= data_set:
+            self.read_header(file_handle, nextdata)
+            self.read_text(file_handle)
+            if '$NEXTDATA' in self.annotation:
+                data_segments += 1
+                nextdata = self.annotation['$NEXTDATA']
+                file_handle.seek(nextdata)
+                if nextdata == 0 and data_segments < data_set:
+                    warnings.warn("File does not contain the number of data sets.")
+                    break
+            else:
+                if data_segments != 0:
+                    warnings.warn("File does not contain $NEXTDATA information.")
+                break
         if read_data:
             self.read_data(file_handle)
 
@@ -134,7 +149,7 @@ class FCSParser(object):
             obj.load_file(file_handle)
         return obj
 
-    def read_header(self, file_handle):
+    def read_header(self, file_handle, nextdata=0):
         """Read the header of the FCS file.
 
         The header specifies where the annotation, data and analysis are located inside the binary
@@ -154,7 +169,7 @@ class FCSParser(object):
                 field_value = int(s)
             except ValueError:
                 field_value = 0
-            header[field] = field_value
+            header[field] = field_value + nextdata
 
         # Checking that the location of the TEXT segment is specified
         for k in ['text start', 'text end']:
@@ -171,7 +186,7 @@ class FCSParser(object):
         self._data_start = header['data start']
         self._data_end = header['data start']
 
-        if header['analysis start'] != 0:
+        if header['analysis end'] - header['analysis start'] != 0:
             warnings.warn(u'There appears to be some information in the ANALYSIS segment of file '
                           u'{0}. However, it might not be read correctly.'.format(self.path))
 
@@ -282,8 +297,8 @@ class FCSParser(object):
         text = self.annotation
         keys = text.keys()
 
-        if '$NEXTDATA' in text and text['$NEXTDATA'] != 0:
-            raise ParserFeatureNotImplementedError(u'Not implemented $NEXTDATA is not 0')
+        #if '$NEXTDATA' in text and text['$NEXTDATA'] != 0:
+            #raise ParserFeatureNotImplementedError(u'Not implemented $NEXTDATA is not 0')
 
         if '$MODE' not in text or text['$MODE'] != 'L':
             raise ParserFeatureNotImplementedError(u'Mode not implemented')
@@ -453,7 +468,7 @@ class FCSParser(object):
 
 
 def parse(path, meta_data_only=False, output_format='DataFrame', compensate=False,
-          channel_naming='$PnS', reformat_meta=False):
+          channel_naming='$PnS', reformat_meta=False, data_set=0):
     """Parse an fcs file at the location specified by the path.
 
     Parameters
@@ -507,7 +522,7 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
 
     read_data = not meta_data_only
 
-    parsed_fcs = FCSParser(path, read_data=read_data, channel_naming=channel_naming)
+    parsed_fcs = FCSParser(path, read_data=read_data, channel_naming=channel_naming, data_set=data_set)
 
     if reformat_meta:
         parsed_fcs.reformat_meta()
