@@ -119,15 +119,15 @@ class FCSParser(object):
         file_handle.seek(0)
         data_segments = 0
         # seek the correct data set in fcs
-        nextdata = 0
+        nextdata_offset = 0
         while data_segments <= data_set:
-            self.read_header(file_handle, nextdata)
+            self.read_header(file_handle, nextdata_offset)
             self.read_text(file_handle)
             if '$NEXTDATA' in self.annotation:
                 data_segments += 1
-                nextdata = self.annotation['$NEXTDATA']
-                file_handle.seek(nextdata)
-                if nextdata == 0 and data_segments < data_set:
+                nextdata_offset = self.annotation['$NEXTDATA']
+                file_handle.seek(nextdata_offset)
+                if nextdata_offset == 0 and data_segments < data_set:
                     warnings.warn("File does not contain the number of data sets.")
                     break
             else:
@@ -152,7 +152,7 @@ class FCSParser(object):
             obj.load_file(file_handle)
         return obj
 
-    def read_header(self, file_handle, nextdata=0):
+    def read_header(self, file_handle, nextdata_offset=0):
         """Read the header of the FCS file.
 
         The header specifies where the annotation, data and analysis are located inside the binary
@@ -160,6 +160,7 @@ class FCSParser(object):
 
         Args:
             file_handle: buffer containing FCS file.
+            nextdata_offset: byte offset of a set header from file start specified by $NEXTDATA
         """
         header = {'FCS format': file_handle.read(6)}
 
@@ -172,7 +173,7 @@ class FCSParser(object):
                 field_value = int(s)
             except ValueError:
                 field_value = 0
-            header[field] = field_value + nextdata
+            header[field] = field_value + nextdata_offset
 
         # Checking that the location of the TEXT segment is specified
         for k in ['text start', 'text end']:
