@@ -85,6 +85,9 @@ class FCSParser(object):
 
                 Note: These names are not flipped in the implementation.
                 It looks like they were swapped for some reason in the official FCS specification.
+            data_set: int
+                Index of retrieved data set in the fcs file.
+                This value specifies the data set being retrieved from an fcs file with multple data sets.
         """
         self._data = None
         self._channel_naming = channel_naming
@@ -495,6 +498,9 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
     reformat_meta: bool
         If true, the meta data is reformatted with the channel information organized
         into a DataFrame and moved into the '_channels_' key
+    data_set: int
+        Index of retrieved data set in the fcs file.
+        This value specifies the data set being retrieved from an fcs file with multple data sets.
 
     Returns
     -------
