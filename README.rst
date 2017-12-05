@@ -12,6 +12,10 @@ Install
 ==================
 
     $ pip install fcsparser
+    
+or
+    
+    $ conda install -c bioconda fcsparser
 
 Using
 ==================
