@@ -1,2 +1,15 @@
-v0.1.2: 2015-12-28: Bug fix for unicode issues
-v0.1.0: 2015-09-03 Repository separated from FlowCytometryTools
+v0.2.0 (2018-02-19):
+
+- python2/3 compatibility fix 
+
+*Breaking changes*
+
+- pandas is required
+- removed (output_datatype) kwarg in parse
+- data is automatically converted to float32 to protect the user from making 
+  mistakes when the data type is mixed (but the user can choose to turn
+  conversion off).
+
+v0.1.2 (2015-12-28): Bug fix for unicode issues
+
+v0.1.0 (2015-09-03): Repository separated from FlowCytometryTools
