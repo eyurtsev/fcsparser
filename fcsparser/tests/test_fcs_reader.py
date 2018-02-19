@@ -109,7 +109,7 @@ class TestFCSReader(unittest.TestCase):
         self.assertTrue(check_data_segment('mq fcs 2.0', values))
 
     def test_mq_FCS_3_0_data_segment(self):
-        """Test DATA segment parsed from FCS (3.0 format) file from a a MACSQuant flow cytometer"""
+        """Test DATA segment parsed from FCS (3.0 format) file from a MACSQuant flow cytometer"""
         values = array([[4.99655876159667968750e+01, -1.78884857177734375000e+02,
                          3.53545867919921875000e+02, -6.63189687500000000000e+04,
                          1.53373974609375000000e+03, 1.71934411621093750000e+03,
@@ -146,7 +146,7 @@ class TestFCSReader(unittest.TestCase):
         self.assertTrue(check_data_segment('mq fcs 3.0', values))
 
     def test_BD_LSR_II(self):
-        """Test DATA segment parsed from FCS (3.0 format) file from a a HTS BD LSR-II flow cytometer"""
+        """Test DATA segment parsed from FCS (3.0 format) file from HTS BD LSR-II flow cytometer"""
         values = array([[-2.85312500000000000000e+04, 1.00000000000000000000e+01,
                          0.00000000000000000000e+00, 7.00149963378906250000e+02,
                          1.65600000000000000000e+03, 2.77083515625000000000e+04,
@@ -174,7 +174,7 @@ class TestFCSReader(unittest.TestCase):
         self.assertTrue(check_data_segment('LSR II fcs 3.0', values))
 
     def test_Fortessa_data_segment(self):
-        """Test DATA segment parsed from FCS (3.0 format) file from a the Fortessa flow cytometer."""
+        """Test DATA segment parsed from FCS (3.0 format) file from a Fortessa flow cytometer."""
         values = array([[1.31284997558593750000e+03, 5.60000000000000000000e+02,
                          1.53640968750000000000e+05, 1.47263989257812500000e+03,
                          1.42400000000000000000e+03, 6.77745312500000000000e+04,
