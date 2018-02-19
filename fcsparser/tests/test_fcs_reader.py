@@ -26,7 +26,8 @@ FILE_IDENTIFIER_TO_PATH = {
                                    'HTS_BD_LSR_II_Mixed_Specimen_001_D6_D06.fcs'),
     'Fortessa fcs 3.0': os.path.join(BASE_PATH, 'Fortessa',
                                      'FCS_3.0_Fortessa_PBS_Specimen_001_A1_A01.fcs'),
-    'large fake fcs': os.path.join(BASE_PATH, 'fake_large_fcs', 'fake_large_fcs.fcs')
+    'large fake fcs': os.path.join(BASE_PATH, 'fake_large_fcs', 'fake_large_fcs.fcs'),
+    'cyflow cube 8': os.path.join(BASE_PATH, 'cyflow_cube_8', 'cyflow_cube_8.fcs'),
 }
 
 # The group of files below is used for checking behavior other than reading data.

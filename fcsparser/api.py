@@ -11,14 +11,15 @@ http://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
 """
 from __future__ import division
 
+import contextlib
+import logging
 from io import BytesIO
 import string
 import sys
 import warnings
-import contextlib
-import logging
 
 import numpy
+import six
 
 try:
     import pandas as pd
@@ -86,7 +87,8 @@ class FCSParser(object):
                 It looks like they were swapped for some reason in the official FCS specification.
             data_set: int
                 Index of retrieved data set in the fcs file.
-                This value specifies the data set being retrieved from an fcs file with multple data sets.
+                This value specifies the data set being retrieved from an fcs file with
+                multiple data sets.
         """
         self._data = None
         self._channel_naming = channel_naming
@@ -104,15 +106,14 @@ class FCSParser(object):
             raise ValueError(u'channel_naming must be either "$PnN" or "$PnS"')
 
         self.annotation = {}
-
         self.path = path
 
         if path:
             with open(path, 'rb') as f:
-                self.load_file(f, data_set, read_data)
+                self.load_file(f, data_set=data_set, read_data=read_data)
 
     def load_file(self, file_handle, data_set=0, read_data=True):
-        """"""
+        """Load the requested parts of the file into memory."""
         file_handle.seek(0, 2)
         self._file_size = file_handle.tell()
         file_handle.seek(0)
@@ -131,7 +132,7 @@ class FCSParser(object):
                     break
             else:
                 if data_segments != 0:
-                    warnings.warn("File does not contain $NEXTDATA information.")
+                    warnings.warn('File does not contain $NEXTDATA information.')
                 break
         if read_data:
             self.read_data(file_handle)
@@ -165,8 +166,8 @@ class FCSParser(object):
 
         file_handle.read(4)  # 4 space characters after the FCS format
 
-        for field in ['text start', 'text end', 'data start', 'data end', 'analysis start',
-                      'analysis end']:
+        for field in ('text start', 'text end', 'data start', 'data end', 'analysis start',
+                      'analysis end'):
             s = file_handle.read(8)
             try:
                 field_value = int(s)
@@ -175,7 +176,7 @@ class FCSParser(object):
             header[field] = field_value + nextdata_offset
 
         # Checking that the location of the TEXT segment is specified
-        for k in ['text start', 'text end']:
+        for k in ('text start', 'text end'):
             if header[k] == 0:
                 raise ValueError(u'The FCS file "{}" seems corrupted. (Parser cannot locate '
                                  u'information about the "{}" segment.)'.format(self.path, k))
@@ -211,10 +212,11 @@ class FCSParser(object):
         try:
             raw_text = raw_text.decode('utf-8')
         except UnicodeDecodeError as e:
+            # Catching the exception and logging it in this way kills the traceback, but
+            # we can worry about this later.
             logger.warning(u'Encountered an illegal utf-8 byte in the header.\n Illegal utf-8 '
-                           u'characters will be ignored.\n The illegal byte was {} at '
-                           u'position {}.'.format(repr(e.object[e.start]), e.start))
-            raw_text = raw_text.decode('utf-8', 'ignore')
+                           u'characters will be ignored.\n{}'.format(e))
+            raw_text = raw_text.decode('utf-8', errors='ignore')
 
         #####
         # Parse the TEXT segment of the FCS file into a python dictionary
@@ -306,7 +308,7 @@ class FCSParser(object):
         if '$P0B' in keys:
             raise ParserFeatureNotImplementedError(u'Not expecting a parameter starting at 0')
 
-        if text['$BYTEORD'] not in ["1,2,3,4", "4,3,2,1", "1,2", "2,1"]:
+        if text['$BYTEORD'] not in ['1,2,3,4', '4,3,2,1', '1,2', '2,1']:
             raise ParserFeatureNotImplementedError(u'$BYTEORD {} '
                                                    u'not implemented'.format(text['$BYTEORD']))
 
@@ -383,11 +385,26 @@ class FCSParser(object):
         ##
         # Read in the data
         if len(set(par_numeric_type_list)) > 1:
-            # values saved in mixed data formats
+            # This branch deals with files in which the different columns (channels)
+            # were encoded with different types; i.e., a mixed data format.
             dtype = ','.join(par_numeric_type_list)
             data = fromfile(file_handle, dtype, num_events)
+
+            # The dtypes in the numpy array `data` above are associated with both a name
+            # and a type; i.e.,
+            # https://docs.scipy.org/doc/numpy/reference/generated/numpy.recarray.html
+            # The names are assigned automatically.
+            # In order for this code to work correctly with the pandas DataFrame constructor,
+            # we convert the *names* of the dtypes to the channel names we want to use.
+
             names = self.get_channel_names()
-            data.dtype.names = tuple([name.encode('ascii', errors='replace') for name in names])
+
+            if six.PY2:
+                encoded_names = [name.encode('ascii', errors='replace') for name in names]
+            else:  # Assume that python3 or older then.
+                encoded_names = [name for name in names]
+
+            data.dtype.names = tuple(encoded_names)
         else:
             # values saved in a single data format
             dtype = par_numeric_type_list[0]

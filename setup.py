@@ -50,6 +50,7 @@ setup(
 
     install_requires=[
         "setuptools",
+        'six',
         "numpy",
         "pandas"
     ],
