@@ -4,6 +4,7 @@ import os
 
 from setuptools import setup, find_packages
 
+
 def get_package_version(path):
     '''Extracts the version'''
     with open(VERSION_FILE, "rt") as f:
@@ -19,12 +20,14 @@ def get_package_version(path):
 
     return version
 
+
 def get_fcs_files():
     matches = []
     for root, dirnames, filenames in os.walk('fcsparser'):
-      for filename in fnmatch.filter(filenames, '*.fcs'):
-        matches.append(os.path.join(root, filename))
+        for filename in fnmatch.filter(filenames, '*.fcs'):
+            matches.append(os.path.join(root, filename))
     return matches
+
 
 VERSION_FILE = "fcsparser/_version.py"
 
@@ -59,7 +62,7 @@ setup(
     ],
 
     long_description=README_content,
-    include_package_data = True,
+    include_package_data=True,
 
     package_data={
         'fcsparser': get_fcs_files(),

@@ -41,7 +41,6 @@ def fromfile(file, dtype, count, *args, **kwargs):
 
 class ParserFeatureNotImplementedError(Exception):
     """Raise when encountering fcs files for which parsing hasn't been implemented."""
-    pass
 
 
 class FCSParser(object):
@@ -526,7 +525,8 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
 
     read_data = not meta_data_only
 
-    parsed_fcs = FCSParser(path, read_data=read_data, channel_naming=channel_naming, data_set=data_set)
+    parsed_fcs = FCSParser(path, read_data=read_data, channel_naming=channel_naming,
+                           data_set=data_set)
 
     if reformat_meta:
         parsed_fcs.reformat_meta()
