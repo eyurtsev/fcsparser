@@ -43,8 +43,8 @@ ADDITIONAL_FILE_MAPPING = {
 def check_data_segment(file_name, expected_array_values):
     """Check that the data segmented extracted from the file corresponds to the expected values."""
     file_path = FILE_IDENTIFIER_TO_PATH[file_name]
-    meta, matrix = parse_fcs(file_path, output_format='ndarray')
-    diff = numpy.abs(expected_array_values - matrix[0:4, :])
+    meta, df = parse_fcs(file_path)
+    diff = numpy.abs(expected_array_values - df.values[0:4, :])
     return numpy.all(diff < 10 ** -8)  # Is this the proper way to do the test?
 
 
@@ -52,7 +52,7 @@ class TestFCSReader(unittest.TestCase):
     def test_mq_FCS_2_0_text_segment(self):
         """Test TEXT segment parsed from FCS (2.0 format) file from a MACSQuant flow cytometer."""
         fname = FILE_IDENTIFIER_TO_PATH['mq fcs 2.0']
-        meta = parse_fcs(fname, meta_data_only=True, output_format='ndarray')
+        meta = parse_fcs(fname, meta_data_only=True)
         self.assertEqual('EY_2013-07-19_PBS_FCS_2.0_Custom_Without_Add_Well_A1.001.fcs',
                          meta['$FIL'])
         self.assertEqual('MACSQuant', meta['$CYT'])
@@ -60,7 +60,7 @@ class TestFCSReader(unittest.TestCase):
     def test_mq_FCS_3_0_text_segment(self):
         """Test TEXT segment parsed from FCS (3.0 format) file from a MACSQuant flow cytometer."""
         fname = FILE_IDENTIFIER_TO_PATH['mq fcs 3.0']
-        meta = parse_fcs(fname, meta_data_only=True, output_format='ndarray')
+        meta = parse_fcs(fname, meta_data_only=True)
 
         expected_fname = 'EY_2013-07-19_PID_101_MG1655_Transformants_D01_Well_A4.001.fcs'
         self.assertEqual(expected_fname, meta['$FIL'])
@@ -69,7 +69,7 @@ class TestFCSReader(unittest.TestCase):
     def test_mq_FCS_3_1_text_segment(self):
         """Test TEXT segment parsed from FCS (3.1 format) file from a MACSQuant flow cytometer."""
         fname = FILE_IDENTIFIER_TO_PATH['mq fcs 3.1']
-        meta = parse_fcs(fname, meta_data_only=True, output_format='ndarray')
+        meta = parse_fcs(fname, meta_data_only=True)
         self.assertEqual('MACSQuant', meta['$CYT'])
 
     def test_mq_FCS_2_0_data_segment(self):
@@ -205,7 +205,7 @@ class TestFCSReader(unittest.TestCase):
     def test_mq_FCS_3_1_data_segment(self):
         """Test DATA segment parsed from FCS (3.1 format) file from a MACSQuant flow cytometer"""
         fname = FILE_IDENTIFIER_TO_PATH['mq fcs 3.1']
-        meta, matrix = parse_fcs(fname, output_format='ndarray')
+        meta, df = parse_fcs(fname)
 
     def test_fcs_reader_API(self):
         """Make sure that the API remains consistent."""
@@ -214,13 +214,8 @@ class TestFCSReader(unittest.TestCase):
             # Invoke the parser in multiple ways to make sure that all invocations run successfully.
             # This is a shallow test that only verifies consistency.
             meta = parse_fcs(fname, meta_data_only=True)
-            meta, data_pandas = parse_fcs(fname, meta_data_only=False, output_format='DataFrame')
-            meta, data_pandas = parse_fcs(fname, meta_data_only=False, output_format='DataFrame',
-                                          reformat_meta=True)
-            meta, data_numpy = parse_fcs(fname, meta_data_only=False, output_format='ndarray',
-                                         reformat_meta=False)
-            meta, data_numpy = parse_fcs(fname, meta_data_only=False, output_format='ndarray',
-                                         reformat_meta=True)
+            meta, data_pandas = parse_fcs(fname, meta_data_only=False)
+            meta, data_pandas = parse_fcs(fname, meta_data_only=False, reformat_meta=True)
             self.assertIsInstance(meta['_channel_names_'], tuple)
             self.assertGreater(len(meta['_channel_names_']), 0)
 
@@ -278,21 +273,18 @@ class TestFCSReader(unittest.TestCase):
         number = 1000
 
         time = timeit.timeit(
-            lambda: parse_fcs(file_path, meta_data_only=True, output_format='DataFrame',
-                              reformat_meta=False), number=number)
+            lambda: parse_fcs(file_path, meta_data_only=True, reformat_meta=False), number=number)
 
         print('Loading fcs file {0} times with meta_data only without reformatting of '
               'meta takes {1} per loop'.format(time / number, number))
 
         time = timeit.timeit(
-            lambda: parse_fcs(file_path, meta_data_only=True, output_format='DataFrame',
-                              reformat_meta=True), number=number)
+            lambda: parse_fcs(file_path, meta_data_only=True, reformat_meta=True), number=number)
         print('Loading fcs file {0} times with meta_data only with reformatting of '
               'meta takes {1} per loop'.format(time / number, number))
 
         time = timeit.timeit(
-            lambda: parse_fcs(file_path, meta_data_only=False, output_format='DataFrame',
-                              reformat_meta=False), number=number)
+            lambda: parse_fcs(file_path, meta_data_only=False, reformat_meta=False), number=number)
 
         print('Loading fcs file {0} times both meta and data but without reformatting of '
               'meta takes {1} per loop'.format(time / number, number))

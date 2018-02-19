@@ -19,14 +19,8 @@ import sys
 import warnings
 
 import numpy
+import pandas as pd
 import six
-
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-    warnings.warn(u'pandas is not installed, so the parse_fcs function can only be used together '
-                  u'with numpy.')
 
 logger = logging.getLogger(__name__)
 
@@ -484,8 +478,8 @@ class FCSParser(object):
         return pd.DataFrame(data, columns=channel_names)
 
 
-def parse(path, meta_data_only=False, output_format='DataFrame', compensate=False,
-          channel_naming='$PnS', reformat_meta=False, data_set=0):
+def parse(path, meta_data_only=False, compensate=False, channel_naming='$PnS',
+          reformat_meta=False, data_set=0, dtype='float32'):
     """Parse an fcs file at the location specified by the path.
 
     Parameters
@@ -514,7 +508,13 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
         into a DataFrame and moved into the '_channels_' key
     data_set: int
         Index of retrieved data set in the fcs file.
-        This value specifies the data set being retrieved from an fcs file with multple data sets.
+        This value specifies the data set being retrieved from an fcs file with multiple data sets.
+    dtype: str | None
+        If provided, will force convert all data into this dtype.
+        This is set by default to auto-convert to float32 to deal with cases in which the original
+        data has been stored using a smaller data type (e.g., unit8). This modifies the original
+        data, but should make follow up analysis safer in basically all cases.
+
 
     Returns
     -------
@@ -530,32 +530,24 @@ def parse(path, meta_data_only=False, output_format='DataFrame', compensate=Fals
     --------
     fname = '../tests/data/EY_2013-05-03_EID_214_PID_1120_Piperacillin_Well_B7.001.fcs'
     meta = parse_fcs(fname, meta_data_only=True)
-    meta, data_pandas = parse_fcs(fname, meta_data_only=False, output_format='DataFrame')
-    meta, data_numpy  = parse_fcs(fname, meta_data_only=False, output_format='ndarray')
+    meta, data_pandas = parse_fcs(fname, meta_data_only=False)
     """
     if compensate:
         raise ParserFeatureNotImplementedError(u'Compensation has not been implemented yet.')
 
-    if reformat_meta or (output_format == 'DataFrame'):
-        if pd is None:
-            raise ImportError(u'You do not have pandas installed.')
-
     read_data = not meta_data_only
 
-    parsed_fcs = FCSParser(path, read_data=read_data, channel_naming=channel_naming,
+    fcs_parser = FCSParser(path, read_data=read_data, channel_naming=channel_naming,
                            data_set=data_set)
 
     if reformat_meta:
-        parsed_fcs.reformat_meta()
+        fcs_parser.reformat_meta()
 
-    meta = parsed_fcs.annotation
+    meta = fcs_parser.annotation
 
     if meta_data_only:
         return meta
-    elif output_format == 'DataFrame':
-        return meta, parsed_fcs.dataframe
-    elif output_format == 'ndarray':
-        # Constructs numpy matrix
-        return meta, parsed_fcs.data
-    else:
-        raise ValueError(u'The output_format must be either "ndarray" or "DataFrame".')
+    else:  # Then include both meta and dataframe.
+        df = fcs_parser.dataframe
+        df = df.astype(dtype) if dtype else df
+        return meta, df
