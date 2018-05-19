@@ -39,7 +39,7 @@ class ParserFeatureNotImplementedError(Exception):
 
 
 class FCSParser(object):
-    def __init__(self, path=None, read_data=True, channel_naming='$PnS', data_set=0):
+    def __init__(self, path=None, read_data=True, channel_naming='$PnS', data_set=0, encoding='utf-8'):
         """Parse FCS files.
 
         Compatible with most FCS 2.0, 3.0, 3.1 files.
@@ -83,7 +83,10 @@ class FCSParser(object):
                 Index of retrieved data set in the fcs file.
                 This value specifies the data set being retrieved from an fcs file with
                 multiple data sets.
+            encoding: str
+                Specify encoding of the text section of the fcs data
         """
+        self._encoding = encoding
         self._data = None
         self._channel_naming = channel_naming
         self.channel_names_s = []
@@ -204,13 +207,13 @@ class FCSParser(object):
         file_handle.seek(header['text start'], 0)
         raw_text = file_handle.read(header['text end'] - header['text start'] + 1)
         try:
-            raw_text = raw_text.decode('utf-8')
+            raw_text = raw_text.decode(self._encoding)
         except UnicodeDecodeError as e:
             # Catching the exception and logging it in this way kills the traceback, but
             # we can worry about this later.
             logger.warning(u'Encountered an illegal utf-8 byte in the header.\n Illegal utf-8 '
                            u'characters will be ignored.\n{}'.format(e))
-            raw_text = raw_text.decode('utf-8', errors='ignore')
+            raw_text = raw_text.decode(self._encoding, errors='ignore')
 
         #####
         # Parse the TEXT segment of the FCS file into a python dictionary
@@ -479,7 +482,7 @@ class FCSParser(object):
 
 
 def parse(path, meta_data_only=False, compensate=False, channel_naming='$PnS',
-          reformat_meta=False, data_set=0, dtype='float32'):
+          reformat_meta=False, data_set=0, dtype='float32', encoding="utf-8"):
     """Parse an fcs file at the location specified by the path.
 
     Parameters
@@ -514,6 +517,8 @@ def parse(path, meta_data_only=False, compensate=False, channel_naming='$PnS',
         This is set by default to auto-convert to float32 to deal with cases in which the original
         data has been stored using a smaller data type (e.g., unit8). This modifies the original
         data, but should make follow up analysis safer in basically all cases.
+    encoding: str
+        Provide encoding type of the text section.
 
 
     Returns
@@ -538,7 +543,7 @@ def parse(path, meta_data_only=False, compensate=False, channel_naming='$PnS',
     read_data = not meta_data_only
 
     fcs_parser = FCSParser(path, read_data=read_data, channel_naming=channel_naming,
-                           data_set=data_set)
+                           data_set=data_set, encoding=encoding)
 
     if reformat_meta:
         fcs_parser.reformat_meta()
