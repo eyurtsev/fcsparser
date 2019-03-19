@@ -208,10 +208,6 @@ class FCSParser(object):
         # Below 1:-1 used to remove first and last characters which should be reserved for delimiter
         # Also, the delimiter is "quoted" by being repeated (two consecutive delimiters)
         delimiter_split_arr = [x.split(delimiter) for x in raw_text[1:-1].split(delimiter * 2)]
-        #print(delimiter)
-        #print(delimiter * 2)
-        #print(raw_text[1:-1].split(delimiter * 2))
-        #print(delimiter_split_arr)
 
         raw_text_segments = delimiter_split_arr[0]
         for part in delimiter_split_arr[1:]:
