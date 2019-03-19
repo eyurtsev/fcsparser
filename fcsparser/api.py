@@ -210,9 +210,9 @@ class FCSParser(object):
         delimiter_split_arr = [x.split(delimiter) for x in raw_text[1:-1].split(delimiter * 2)]
 
         raw_text_segments = delimiter_split_arr[0]
-        for part in delimiter_split_arr[1:]:
-            raw_text_segments[-1] += (delimiter + part[0])
-            raw_text_segments.extend(part[1:])
+        for partial_segment in delimiter_split_arr[1:]:
+            raw_text_segments[-1] += (delimiter + partial_segment[0])
+            raw_text_segments.extend(partial_segment[1:])
 
         keys, values = raw_text_segments[0::2], raw_text_segments[1::2]
         text = {key: value for key, value in zip(keys, values)}  # build dictionary
