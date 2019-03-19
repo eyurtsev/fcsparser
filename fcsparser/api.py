@@ -193,6 +193,35 @@ class FCSParser(object):
 
         self.annotation['__header__'] = header
 
+    def _extract_text_dict(self, raw_text):
+        """Parse the TEXT segment of the FCS file into a python dictionary."""
+        delimiter = raw_text[0]
+
+        if raw_text[-1] != delimiter:
+            raw_text = raw_text.strip()
+            if raw_text[-1] != delimiter:
+                msg = (u'The first two characters were:\n {}. The last two characters were: {}\n'
+                       u'Parser expects the same delimiter character in beginning '
+                       u'and end of TEXT segment'.format(raw_text[:2], raw_text[-2:]))
+                raise ParserFeatureNotImplementedError(msg)
+
+        # Below 1:-1 used to remove first and last characters which should be reserved for delimiter
+        # Also, the delimiter is "quoted" by being repeated (two consecutive delimiters)
+        delimiter_split_arr = [x.split(delimiter) for x in raw_text[1:-1].split(delimiter * 2)]
+        #print(delimiter)
+        #print(delimiter * 2)
+        #print(raw_text[1:-1].split(delimiter * 2))
+        #print(delimiter_split_arr)
+
+        raw_text_segments = delimiter_split_arr[0]
+        for part in delimiter_split_arr[1:]:
+            raw_text_segments[-1] += (delimiter + part[0])
+            raw_text_segments.extend(part[1:])
+
+        keys, values = raw_text_segments[0::2], raw_text_segments[1::2]
+        text = {key: value for key, value in zip(keys, values)}  # build dictionary
+        return text
+
     def read_text(self, file_handle):
         """Parse the TEXT segment of the FCS file.
 
@@ -215,22 +244,7 @@ class FCSParser(object):
                            u'characters will be ignored.\n{}'.format(e))
             raw_text = raw_text.decode(self._encoding, errors='ignore')
 
-        #####
-        # Parse the TEXT segment of the FCS file into a python dictionary
-        delimiter = raw_text[0]
-
-        if raw_text[-1] != delimiter:
-            raw_text = raw_text.strip()
-            if raw_text[-1] != delimiter:
-                msg = (u'The first two characters were:\n {}. The last two characters were: {}\n'
-                       u'Parser expects the same delimiter character in beginning '
-                       u'and end of TEXT segment'.format(raw_text[:2], raw_text[-2:]))
-                raise ParserFeatureNotImplementedError(msg)
-
-        # Below 1:-1 used to remove first and last characters which should be reserved for delimiter
-        raw_text_segments = raw_text[1:-1].split(delimiter)
-        keys, values = raw_text_segments[0::2], raw_text_segments[1::2]
-        text = {key: value for key, value in zip(keys, values)}  # build dictionary
+        text = self._extract_text_dict(raw_text)
 
         ##
         # Extract channel names and convert some of the channel properties
@@ -238,7 +252,7 @@ class FCSParser(object):
         # Note: do not use regular expressions for manipulations here.
         # Regular expressions are too heavy in terms of computation time.
         pars = int(text['$PAR'])
-        if '$P0B' in keys:  # Checking whether channel number count starts from 0 or from 1
+        if '$P0B' in text.keys():  # Checking whether channel number count starts from 0 or from 1
             self.channel_numbers = range(0, pars)  # Channel number count starts from 0
         else:
             self.channel_numbers = range(1, pars + 1)  # Channel numbers start from 1

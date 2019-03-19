@@ -72,6 +72,12 @@ class TestFCSReader(unittest.TestCase):
         meta = parse_fcs(fname, meta_data_only=True)
         self.assertEqual('MACSQuant', meta['$CYT'])
 
+    def test_repeated_delimiter_text_segment(self):
+        parser = FCSParser()
+        raw_text = '/flow_speed/3 m//s/x/a///y/b/////'
+        text = parser._extract_text_dict(raw_text)
+        self.assertDictEqual(text, {'flow_speed': '3 m/s', 'x': 'a/', 'y': 'b//'})
+
     def test_mq_FCS_2_0_data_segment(self):
         """Test DATA segment parsed from FCS (2.0 format) file from a MACSQuant flow cytometer"""
         values = array([[1.60764902830123901367e-03, 1.46554875373840332031e+00,
