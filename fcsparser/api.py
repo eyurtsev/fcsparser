@@ -17,6 +17,7 @@ from io import BytesIO
 import string
 import sys
 import warnings
+import re
 
 import numpy
 import pandas as pd
@@ -206,16 +207,23 @@ class FCSParser(object):
                 raise ParserFeatureNotImplementedError(msg)
 
         # Below 1:-1 used to remove first and last characters which should be reserved for delimiter
-        # Also, the delimiter is "quoted" by being repeated (two consecutive delimiters)
-        delimiter_split_arr = [x.split(delimiter) for x in raw_text[1:-1].split(delimiter * 2)]
+        raw_text = raw_text[1:-1]
 
-        raw_text_segments = delimiter_split_arr[0]
-        for partial_segment in delimiter_split_arr[1:]:
-            raw_text_segments[-1] += (delimiter + partial_segment[0])
-            raw_text_segments.extend(partial_segment[1:])
+        ed = re.escape(delimiter)  # escaped for regex, not FCS format
+        # The delimiter is escaped by being repeated (two consecutive delimiters). This regex finds
+        # odd-length repetitions of the delimiter. Since each pair is escaped, only the last
+        # delimiter in odd-length repetitions truly delimits TEXT keys and values.
+        regex = "(?<!" + ed + ")(" + ed * 2 + ")*" + ed + "(?!" + ed + ")"
+        # We can't directly split with this regexp because the first n-1 delimiters would have to
+        # be in the look-behind, and look-behinds can only match fixed-length patterns.
+        split_idx = [0] + [m.end() for m in re.finditer(regex, raw_text)] + [len(raw_text) + 1]
+        # Use the identified split indices to actually split the TEXT segment, and replace the
+        # escaped delimiters along the way
+        raw_text_segments = [raw_text[start:(end - 1)].replace('//', '/')
+                             for start, end in zip(split_idx[:-1], split_idx[1:])]
 
         keys, values = raw_text_segments[0::2], raw_text_segments[1::2]
-        text = {key: value for key, value in zip(keys, values)}  # build dictionary
+        text = dict(zip(keys, values))
         return text
 
     def read_text(self, file_handle):
