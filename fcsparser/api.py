@@ -206,7 +206,7 @@ class FCSParser(object):
                        u'and end of TEXT segment'.format(raw_text[:2], raw_text[-2:]))
                 raise ParserFeatureNotImplementedError(msg)
 
-        # Delimiters are "quoted" by being repeated (two consecutive delimiters). This code splits
+        # The delimiter is escaped by being repeated (two consecutive delimiters). This code splits
         # on the escaped delimiter first, so there is no need for extra logic to distinguish
         # actual delimiters from escaped delimiters.
         nested_split_list = [x.split(delimiter) for x in raw_text[1:-1].split(delimiter * 2)]
