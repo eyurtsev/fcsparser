@@ -206,25 +206,22 @@ class FCSParser(object):
                        u'and end of TEXT segment'.format(raw_text[:2], raw_text[-2:]))
                 raise ParserFeatureNotImplementedError(msg)
 
-        # Below 1:-1 used to remove first and last characters which should be reserved for delimiter
-        raw_text = raw_text[1:-1]
+        # Delimiters are "quoted" by being repeated (two consecutive delimiters). This code splits
+        # on the escaped delimiter first, so there is no need for extra logic to distinguish
+        # actual delimiters from escaped delimiters.
+        nested_split_list = [x.split(delimiter) for x in raw_text[1:-1].split(delimiter * 2)]
+        # 1:-1 above removes the first and last characters which are reserved for the delimiter.
 
-        ed = re.escape(delimiter)  # escaped for regex, not FCS format
-        # The delimiter is escaped by being repeated (two consecutive delimiters). This regex finds
-        # odd-length repetitions of the delimiter. Since each pair is escaped, only the last
-        # delimiter in odd-length repetitions truly delimits TEXT keys and values.
-        regex = "(?<!" + ed + ")(" + ed * 2 + ")*" + ed + "(?!" + ed + ")"
-        # We can't directly split with this regexp because the first n-1 delimiters would have to
-        # be in the look-behind, and look-behinds can only match fixed-length patterns.
-        split_idx = [0] + [m.end() for m in re.finditer(regex, raw_text)] + [len(raw_text) + 1]
-        # Use the identified split indices to actually split the TEXT segment, and replace the
-        # escaped delimiters along the way
-        raw_text_segments = [raw_text[start:(end - 1)].replace('//', '/')
-                             for start, end in zip(split_idx[:-1], split_idx[1:])]
+        # Flatten the nested list to a list of elements (alternating keys and values)
+        raw_text_elements = nested_split_list[0]
+        for partial_element_list in nested_split_list[1:]:
+            # Rejoin two parts of an element that was split by an escaped delimiter (the end and
+            # start of two successive sub-lists in nested_split_list)
+            raw_text_elements[-1] += (delimiter + partial_element_list[0])
+            raw_text_elements.extend(partial_element_list[1:])
 
-        keys, values = raw_text_segments[0::2], raw_text_segments[1::2]
-        text = dict(zip(keys, values))
-        return text
+        keys, values = raw_text_elements[0::2], raw_text_elements[1::2]
+        return dict(zip(keys, values))
 
     def read_text(self, file_handle):
         """Parse the TEXT segment of the FCS file.
