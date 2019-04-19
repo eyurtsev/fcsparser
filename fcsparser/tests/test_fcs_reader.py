@@ -260,19 +260,6 @@ class TestFCSReader(unittest.TestCase):
         self.assertListEqual(channel_names, pns_names)
         self.assertListEqual(list(data.columns.values), pns_names)
 
-    def test_channel_naming_automatic_correction(self):
-        """Check that channel names are automatically corrected if duplicated names exist."""
-        file_path = ADDITIONAL_FILE_MAPPING['duplicate_names']
-
-        with warnings.catch_warnings(record=True) as w:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always")
-            meta = parse_fcs(file_path, meta_data_only=True, reformat_meta=True)
-            channel_names = list(meta['_channel_names_'])
-            expected_channel_names = ['HDR-CE', 'HDR-SE', 'HDR-V', 'FSC-A', 'FSC-H',
-                                      'SSC-A', 'SSC-H', 'FL7-A', 'FL7-H']
-            self.assertListEqual(expected_channel_names, channel_names)
-
     def test_speed_of_reading_fcs_files(self):
         """Test the speed of loading a FCS files"""
         file_path = FILE_IDENTIFIER_TO_PATH['mq fcs 3.1']
