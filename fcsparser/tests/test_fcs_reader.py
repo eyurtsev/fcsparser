@@ -72,6 +72,12 @@ class TestFCSReader(unittest.TestCase):
         meta = parse_fcs(fname, meta_data_only=True)
         self.assertEqual('MACSQuant', meta['$CYT'])
 
+    def test_repeated_delimiter_text_segment(self):
+        parser = FCSParser()
+        raw_text = '/flow_speed/3 m//s/x/a///y/b/////'
+        text = parser._extract_text_dict(raw_text)
+        self.assertDictEqual(text, {'flow_speed': '3 m/s', 'x': 'a/', 'y': 'b//'})
+
     def test_mq_FCS_2_0_data_segment(self):
         """Test DATA segment parsed from FCS (2.0 format) file from a MACSQuant flow cytometer"""
         values = array([[1.60764902830123901367e-03, 1.46554875373840332031e+00,
@@ -253,19 +259,6 @@ class TestFCSReader(unittest.TestCase):
 
         self.assertListEqual(channel_names, pns_names)
         self.assertListEqual(list(data.columns.values), pns_names)
-
-    def test_channel_naming_automatic_correction(self):
-        """Check that channel names are automatically corrected if duplicated names exist."""
-        file_path = ADDITIONAL_FILE_MAPPING['duplicate_names']
-
-        with warnings.catch_warnings(record=True) as w:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always")
-            meta = parse_fcs(file_path, meta_data_only=True, reformat_meta=True)
-            channel_names = list(meta['_channel_names_'])
-            expected_channel_names = ['HDR-CE', 'HDR-SE', 'HDR-V', 'FSC-A', 'FSC-H',
-                                      'SSC-A', 'SSC-H', 'FL7-A', 'FL7-H']
-            self.assertListEqual(expected_channel_names, channel_names)
 
     def test_speed_of_reading_fcs_files(self):
         """Test the speed of loading a FCS files"""
