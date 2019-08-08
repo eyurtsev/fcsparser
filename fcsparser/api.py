@@ -172,6 +172,12 @@ class FCSParser(object):
             except ValueError:
                 field_value = 0
             header[field] = field_value + nextdata_offset
+        # In some .fcs files, 'text end' and 'data start' are equal, e.g., 
+        # http://flowrepository.org/experiments/2241/download_ziped_files
+        # and this would lead to a mistake when run @_extract_text_dict
+        # We should avoid this situation.
+        if header['text end'] == header['data start']:
+            header['text end'] = header['text end'] - 1
 
         # Checking that the location of the TEXT segment is specified
         for k in ('text start', 'text end'):
