@@ -436,6 +436,25 @@ class FCSParser(object):
             # swaps the actual bytes and also the endianness
             data = data.byteswap().newbyteorder()
 
+        # Mask off high bits if integer type data
+        if text["$DATATYPE"] == "I":
+            if len(set(par_numeric_type_list)) > 1:
+                for channel_number in self.channel_numbers:
+                    valid_bits = numpy.ceil(numpy.log2(numpy.float(text["$P{0}R".format(channel_number)])))
+
+                    if bytes_per_par_list[channel_number - 1] * 8 == valid_bits:
+                        continue
+
+                    name = data.dtype.names[channel_number - 1]
+                    bitmask = numpy.array([2**valid_bits - 1], dtype=data[name].dtype)
+                    data[name] = data[name] & bitmask
+            else:
+                valid_bits_per_par_list = numpy.array([
+                    2**numpy.ceil(numpy.log2(numpy.float(text["$P{0}R".format(i)]))) - 1
+                    for i in self.channel_numbers
+                ], dtype=data.dtype)
+                data &= valid_bits_per_par_list
+
         self._data = data
 
     @property
