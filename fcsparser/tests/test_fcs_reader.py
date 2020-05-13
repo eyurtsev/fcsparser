@@ -28,6 +28,7 @@ FILE_IDENTIFIER_TO_PATH = {
                                      'FCS_3.0_Fortessa_PBS_Specimen_001_A1_A01.fcs'),
     'large fake fcs': os.path.join(BASE_PATH, 'fake_large_fcs', 'fake_large_fcs.fcs'),
     'cyflow cube 8': os.path.join(BASE_PATH, 'cyflow_cube_8', 'cyflow_cube_8.fcs'),
+    'fake bitmask error': os.path.join(BASE_PATH, 'fake_bitmask_error', 'fcs1_cleaned.lmd'),
 }
 
 # The group of files below is used for checking behavior other than reading data.
@@ -310,6 +311,22 @@ class TestFCSReader(unittest.TestCase):
                          2.49599991e+01, 4.91399994e+01, 7.23799973e+01,
                          -1.29600010e+01, 1.00000001e-01]], dtype=numpy.float32)
         self.assertTrue(check_data_segment('large fake fcs', values))
+
+    def test_reading_bitmask_error(self):
+        """Check correct bitmasking of partial Integer fields in data segment."""
+        values = array([[5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                         5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                         5.28000000e+2],
+                        [5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                         5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                         5.28000000e+2],
+                        [5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                         5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                         5.28000000e+2],
+                        [5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                         5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                         5.28000000e+2]], dtype=numpy.float32)
+        self.assertTrue(check_data_segment('fake bitmask error', values))
 
     def test_reading_in_memory_fcs_file(self):
         """Find data segment of an in-memory FCS file."""
