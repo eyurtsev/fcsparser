@@ -1,3 +1,16 @@
+v0.2.1 (2020-05-13): Bug fixes
+
+Max Zhao (2):
+      Adding encoding option setting for reading fcs files
+      Add bitmask to mask bits outside of specified data range (#22)
+
+cericson (1):
+      Bugfix: Handle repeated TEXT delimiter (#18)
+
+monchin (1):
+      To avoid 'text end' equals 'data start' (#20)
+
+
 v0.2.0 (2018-02-19):
 
 - python2/3 compatibility fix 
