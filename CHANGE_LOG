@@ -1,3 +1,11 @@
+v0.2.2 (2021-08-13): Bug fixes
+
+Author: Brian Teague <bpteague@gmail.com>
+Date:   Fri Aug 13 13:42:19 2021 -0400
+
+    parse TEXT segments that don't end with a delimiter (#27)
+
+
 v0.2.1 (2020-05-13): Bug fixes
 
 Max Zhao (2):
