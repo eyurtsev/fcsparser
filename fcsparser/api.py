@@ -17,7 +17,6 @@ from io import BytesIO
 import string
 import sys
 import warnings
-import re
 
 import numpy
 import pandas as pd
@@ -200,7 +199,8 @@ class FCSParser(object):
 
         self.annotation['__header__'] = header
 
-    def _extract_text_dict(self, raw_text):
+    @staticmethod
+    def _extract_text_dict(raw_text):
         """Parse the TEXT segment of the FCS file into a python dictionary."""
         delimiter = raw_text[0]
 
@@ -452,11 +452,11 @@ class FCSParser(object):
                         continue
 
                     name = data.dtype.names[channel_number - 1]
-                    bitmask = numpy.array([2**valid_bits - 1], dtype=data[name].dtype)
+                    bitmask = numpy.array([2 ** valid_bits - 1], dtype=data[name].dtype)
                     data[name] = data[name] & bitmask
             else:
                 valid_bits_per_par_list = numpy.array([
-                    2**numpy.ceil(numpy.log2(numpy.float(text["$P{0}R".format(i)]))) - 1
+                    2 ** numpy.ceil(numpy.log2(numpy.float(text["$P{0}R".format(i)]))) - 1
                     for i in self.channel_numbers
                 ], dtype=data.dtype)
                 data &= valid_bits_per_par_list
@@ -537,8 +537,7 @@ def parse(path, meta_data_only=False, compensate=False, channel_naming='$PnS',
         Path of .fcs file
     meta_data_only: bool
         If True, the parse_fcs only returns the meta_data (the TEXT segment of the FCS file)
-    output_format: 'DataFrame' | 'ndarray'
-        If set to 'DataFrame' the returned
+    compensate: bool, reserved parameter to indicate whether the  FCS data should be compensated, unimplemented.
     channel_naming: '$PnS' | '$PnN'
         Determines which meta data field is used for naming the channels.
         The default should be $PnS (even though it is not guaranteed to be unique)
