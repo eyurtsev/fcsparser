@@ -602,3 +602,4 @@ def parse(path, meta_data_only=False, compensate=False, channel_naming='$PnS',
         df = fcs_parser.dataframe
         df = df.astype(dtype) if dtype else df
         return meta, df
+    
