@@ -209,14 +209,20 @@ class FCSParser(object):
             if raw_text[-1] != delimiter:
                 msg = (u'The first two characters were:\n {}. The last two characters were: {}\n'
                        u'Parser expects the same delimiter character in beginning '
-                       u'and end of TEXT segment'.format(raw_text[:2], raw_text[-2:]))
-                raise ParserFeatureNotImplementedError(msg)
+                       u'and end of TEXT segment. This file may be parsed incorrectly!'.format(raw_text[:2], raw_text[-2:]))
+                warnings.warn(msg)
+                raw_text = raw_text[1:]
+            else:
+                raw_text = raw_text[1:-1]
+        else:
+            raw_text = raw_text[1:-1]
+            
+        # 1:-1 above removes the first and last characters which are reserved for the delimiter.
 
         # The delimiter is escaped by being repeated (two consecutive delimiters). This code splits
         # on the escaped delimiter first, so there is no need for extra logic to distinguish
         # actual delimiters from escaped delimiters.
-        nested_split_list = [x.split(delimiter) for x in raw_text[1:-1].split(delimiter * 2)]
-        # 1:-1 above removes the first and last characters which are reserved for the delimiter.
+        nested_split_list = [x.split(delimiter) for x in raw_text.split(delimiter * 2)]
 
         # Flatten the nested list to a list of elements (alternating keys and values)
         raw_text_elements = nested_split_list[0]
