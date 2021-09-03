@@ -29,6 +29,7 @@ FILE_IDENTIFIER_TO_PATH = {
     'large fake fcs': os.path.join(BASE_PATH, 'fake_large_fcs', 'fake_large_fcs.fcs'),
     'cyflow cube 8': os.path.join(BASE_PATH, 'cyflow_cube_8', 'cyflow_cube_8.fcs'),
     'fake bitmask error': os.path.join(BASE_PATH, 'fake_bitmask_error', 'fcs1_cleaned.lmd'),
+    'Cytek xP5': os.path.join(BASE_PATH, 'Cytek_xP5', 'Cytek_xP5.fcs'),
 }
 
 # The group of files below is used for checking behavior other than reading data.
@@ -212,6 +213,11 @@ class TestFCSReader(unittest.TestCase):
     def test_mq_FCS_3_1_data_segment(self):
         """Test DATA segment parsed from FCS (3.1 format) file from a MACSQuant flow cytometer"""
         fname = FILE_IDENTIFIER_TO_PATH['mq fcs 3.1']
+        meta, df = parse_fcs(fname)
+
+    def test_Cytek_xP5(self):
+        """Test the 3-byte-wide DATA segment from a Cytek xP5"""
+        fname = FILE_IDENTIFIER_TO_PATH['Cytek xP5']
         meta, df = parse_fcs(fname)
 
     def test_fcs_reader_API(self):

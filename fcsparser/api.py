@@ -55,7 +55,7 @@ def fromfile(file, dtype, count, *args, **kwargs):
         dtype_endian = dt[0]
         num_bytes = int(dt[2:])
         while num_bytes & (num_bytes - 1) != 0:
-            ret = np.insert(ret, sum(field_width[0:field]), np.zeros(count), axis = 1)
+            ret = numpy.insert(ret, sum(field_width[0:field]), numpy.zeros(count), axis = 1)
             num_bytes = num_bytes + 1
         ret_dtypes.append(dtype_endian + dtype_type + str(num_bytes))
 
