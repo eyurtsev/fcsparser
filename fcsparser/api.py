@@ -27,38 +27,85 @@ logger = logging.getLogger(__name__)
 
 def fromfile(file, dtype, count, *args, **kwargs):
     """Wrapper around np.fromfile to support any file-like object."""
+
+    # to understand this function, you must understand the difference
+    # between a numpy *record* and a numpy *field*.  a *record* is
+    # composed of a number of *fields*, each of which may be a different
+    # dtype.  for example, if we were encoding a list of two-dimensional
+    # points on a plane, each point would be represented by a record
+    # containing two fields, each of which was a four-byte float
+    # represented by the dtype 'f4'.  thus, the record would be 
+    # specified by dtype("f4, f4").
     
+    # numpy's functions expect all field widths to be a power of two  
+    # (because this is how such things are stored in memory.)
+    # unfortunately, some pathological cytometers don't make their 
+    # records a power-of-two wide.  For example, a Cytek xP5 encodes
+    # records in their DATA segment in three-byte-wide integers --
+    # this comes in as a dtype of "i3", which makes numpy freak out.
+
+    # To address this, we convert the requested dtype so that each
+    # record is read as a series of one-byte-wide unsigned integers 
+    # ('u1'), pad out each record with NUL bytes until it is
+    # a power-of-two wide, then re-convert it to the requested
+    # dtype (but with a power-of-two width) and return it.
+
+    # what dtypes were we asked for?
     dtypes = dtype.split(',')
-    field_width = []
+    field_widths = []
     
+    # how wide is each dtype?
     for dt in dtypes:
         num_bytes = int(dt[2:])
-        field_width.append(num_bytes)
-        
+        field_widths.append(num_bytes)
+
+    # how many bytes wide is the total record?
+    record_width = sum(field_widths)
+      
+    # read the DATA segment into a 1 x `count` array of records. 
+    # each record has a number of `u1` (one-byte unsigned integers)
+    # equal to `record_width`.
     try:
         ret = numpy.fromfile(file, 
-                             dtype=",".join(['u1'] * sum(field_width)), 
+                             dtype=",".join(['u1'] * record_width), 
                              count=count, 
                              *args, 
                              **kwargs)
     except (TypeError, IOError):
-        ret = numpy.frombuffer(file.read(count * sum(field_width)),
-                               dtype=",".join(['u1'] * sum(field_width)), 
+        ret = numpy.frombuffer(file.read(count * record_width),
+                               dtype=",".join(['u1'] * record_width), 
                                count=count, 
                                *args, 
                                **kwargs)
 
-    ret = ret.view('u1').reshape((count, sum(field_width)))
+    # convert the DATA segment from a 1 x `count` array of records 
+    # (and remember, each record is composed of `record_width` 
+    # 1-byte unsigned ints) to a `record_width` x `count` array of 
+    # 'u1' unsigned ints.
+    ret = ret.view('u1').reshape((count, record_width))
+
+    # now, for each requested dtype.....
     ret_dtypes = []
-    for field, dt in enumerate(dtypes):
+    for field_idx, dt in enumerate(dtypes):
         dtype_type = dt[1]
         dtype_endian = dt[0]
         num_bytes = int(dt[2:])
+
+        # num_bytes & (num_bytes - 1) is 0 IFF num_bytes is a power of two
+        # while num_bytes is NOT a power of two....
         while num_bytes & (num_bytes - 1) != 0:
-            ret = numpy.insert(ret, sum(field_width[0:field]), numpy.zeros(count), axis = 1)
+            # ...insert another COLUMN of NUL bytes at the front of the field....
+            ret = numpy.insert(ret, sum(field_widths[0:field_idx]), numpy.zeros(count), axis=1)
+
+            # ....and increment the number of bytes for this field.
             num_bytes = num_bytes + 1
+
+        # when we've got a field that's a power-of-two wide, append that field's
+        # dtype to the list of record dtypes we're going to return
         ret_dtypes.append(dtype_endian + dtype_type + str(num_bytes))
 
+    # now, "cast" the newly padded array as the desired data types,
+    # and return it.
     return ret.view(','.join(ret_dtypes)).ravel()
 
 
@@ -475,7 +522,7 @@ class FCSParser(object):
         if text["$DATATYPE"] == "I":
             if len(set(par_numeric_type_list)) > 1:
                 for channel_number in self.channel_numbers:
-                    valid_bits = numpy.ceil(numpy.log2(numpy.float(text["$P{0}R".format(channel_number)])))
+                    valid_bits = numpy.ceil(numpy.log2(float(text["$P{0}R".format(channel_number)])))
 
                     if bytes_per_par_list[channel_number - 1] * 8 == valid_bits:
                         continue
@@ -485,7 +532,7 @@ class FCSParser(object):
                     data[name] = data[name] & bitmask
             else:
                 valid_bits_per_par_list = numpy.array([
-                    2 ** numpy.ceil(numpy.log2(numpy.float(text["$P{0}R".format(i)]))) - 1
+                    2 ** numpy.ceil(numpy.log2(float(text["$P{0}R".format(i)]))) - 1
                     for i in self.channel_numbers
                 ], dtype=data.dtype)
                 data &= valid_bits_per_par_list
