@@ -7,6 +7,7 @@ import unittest
 import numpy
 import pytest
 from numpy import array
+from numpy.testing import assert_array_equal
 
 from .. import parse as parse_fcs
 from ..api import FCSParser
@@ -370,6 +371,44 @@ class TestFCSReader(unittest.TestCase):
         matrix = FCSParser.from_data(data).data
         diff = numpy.abs(values - matrix[0:4, :])
         self.assertTrue(numpy.all(diff < 10 ** -8))
+
+
+class TestMultiDtypeParsing(unittest.TestCase):
+    """Verify that parsing of an fcs file that's composed of multiple dtypes works."""
+
+    @pytest.mark.skip(reason="Needs to be fixed, appears broken from initial commit")
+    def test_parse_into_numpy_data_correctly(self):
+        """Test that we can parse the data into a numpy matrix correctly.
+
+        This test is currently broken. It's likely been broken since the initial commit.
+        Users are probably relying on the dataframe output (tested below), which
+        does seem to work correctly.
+        """
+        fname = FILE_IDENTIFIER_TO_PATH['cyflow cube 8']
+        # This file contains a list of multiple dtypes
+        # ['<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u4', '<u1']
+        fcsparser = FCSParser(path=fname)
+        # Make sure that data gets parsed as 2-dimensional
+        self.assertEquals(fcsparser.data.shape, (725, 10))
+
+    def test_parsed_into_dataframe_correctly(self):
+        """Test that we can parse the data into a dataframe correctly."""
+        fname = FILE_IDENTIFIER_TO_PATH['cyflow cube 8']
+        # This file contains a list of multiple dtypes
+        # ['<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u4', '<u1']
+        fcsparser = FCSParser(path=fname)
+        # Make sure that data gets parsed as 2-dimensional
+        self.assertEquals(fcsparser.dataframe.shape, (725, 10))
+        # Verify that the values are correct.
+        assert_array_equal(
+            fcsparser.dataframe.values[:2, :],
+            numpy.array(
+                [
+                    [8, 7, 15, 15, 5, 8, 7, 6, 23, 0],
+                    [6, 7, 13, 14, 6, 9, 10, 4, 23, 0]
+                ]
+            )
+        )
 
 
 # FCS file that contains only the header.
