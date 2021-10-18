@@ -280,7 +280,9 @@ class FCSParser(object):
         delimiter = raw_text[0]
 
         if raw_text[-1] != delimiter:
-            raw_text = raw_text.strip()
+            # Avoid stripping whitespace delimiter
+            if delimiter.strip() == delimiter:
+                raw_text = raw_text.strip()
             if raw_text[-1] != delimiter:
                 msg = (u'The first two characters were:\n {}. The last two characters were: {}\n'
                        u'Parser expects the same delimiter character in beginning '
