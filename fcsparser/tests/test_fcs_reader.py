@@ -84,6 +84,23 @@ class TestFCSReader(unittest.TestCase):
         text = parser._extract_text_dict(raw_text)
         self.assertDictEqual(text, {'flow_speed': '3 m/s', 'x': 'a/', 'y': 'b//'})
 
+    def whitespace_delimiter_test_helper(self, has_final_delimiter: bool):
+        parser = FCSParser()
+        delimiter = '\t'
+        text_values = ['$BEGINDATA', '15', '$ENDDATA', '500']
+        raw_text = delimiter + delimiter.join(text_values)
+        if has_final_delimiter:
+            raw_text = raw_text + delimiter
+        text = parser._extract_text_dict(raw_text)
+        self.assertDictEqual(text, {'$BEGINDATA': '15', '$ENDDATA': '500'})
+    
+    def test_whitespace_delimited_text_extraction(self):
+        TestFCSReader.whitespace_delimiter_test_helper(self, has_final_delimiter=True)
+
+
+    def test_whitespace_delimited_text_extraction_no_final_delimiter(self):
+        TestFCSReader.whitespace_delimiter_test_helper(self, has_final_delimiter=False)
+
     def test_mq_FCS_2_0_data_segment(self):
         """Test DATA segment parsed from FCS (2.0 format) file from a MACSQuant flow cytometer"""
         values = np.array([[1.60764902830123901367e-03, 1.46554875373840332031e+00,
