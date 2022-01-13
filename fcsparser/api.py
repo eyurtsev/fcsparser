@@ -197,7 +197,7 @@ class FCSParser(object):
             self.read_text(file_handle)
             if '$NEXTDATA' in self.annotation:
                 data_segments += 1
-                nextdata_offset = self.annotation['$NEXTDATA']
+                nextdata_offset += self.annotation['$NEXTDATA']
                 file_handle.seek(nextdata_offset)
                 if nextdata_offset == 0 and data_segments < data_set:
                     warnings.warn("File does not contain the number of data sets.")

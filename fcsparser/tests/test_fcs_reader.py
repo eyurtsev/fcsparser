@@ -31,6 +31,7 @@ FILE_IDENTIFIER_TO_PATH = {
     'cyflow cube 8': os.path.join(BASE_PATH, 'cyflow_cube_8', 'cyflow_cube_8.fcs'),
     'fake bitmask error': os.path.join(BASE_PATH, 'fake_bitmask_error', 'fcs1_cleaned.lmd'),
     'Cytek xP5': os.path.join(BASE_PATH, 'Cytek_xP5', 'Cytek_xP5.fcs'),
+    'guava muse': os.path.join(BASE_PATH, 'GuavaMuse', 'ADM_09SEP2020_181310.VIA.FCS'),
 }
 
 # The group of files below is used for checking behavior other than reading data.
@@ -255,6 +256,14 @@ class TestFCSReader(unittest.TestCase):
              [0., 171., 128., 153., 199., 91., 211., 12.]], dtype=np.float32
         )
         _assert_data_segment('Cytek xP5', expected_values, num_rows=2)
+
+    def test_multi_data_set(self):
+        """Test reading a file with 4 data sets"""
+        fname = FILE_IDENTIFIER_TO_PATH['guava muse']
+        meta, df = parse_fcs(fname, data_set = 0)
+        meta, df = parse_fcs(fname, data_set = 1)
+        meta, df = parse_fcs(fname, data_set = 2)
+        meta, df = parse_fcs(fname, data_set = 3)
 
     def test_fcs_reader_API(self):
         """Make sure that the API remains consistent."""
