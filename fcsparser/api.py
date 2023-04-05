@@ -349,19 +349,21 @@ class FCSParser(object):
             self.channel_numbers = range(1, pars + 1)  # Channel numbers start from 1
 
         # Extract parameter names
-        try:
-            names_n = tuple([text['$P{0}N'.format(i)] for i in self.channel_numbers])
-        except KeyError:
-            names_n = []
+        for i in self.channel_numbers:
+            n_key = '$P{0}N'.format(i)
+            s_key = '$P{0}S'.format(i)
+            name_n = ""
+            name_s = ""
+            if n_key in text.keys():
+                name_n = text[n_key]
+            if s_key in text.keys():
+                name_s = text[s_key]
+            
+            self.channel_names_n.append(name_n)
+            self.channel_names_s.append(name_s if name_s != "" else name_n)
 
-        try:
-            names_s = tuple([text['$P{0}S'.format(i)] for i in self.channel_numbers])
-        except KeyError:
-            names_s = []
-
-        self.channel_names_s = names_s
-        self.channel_names_n = names_n
-
+        self.channel_names_n = tuple(self.channel_names_n)
+        self.channel_names_s = tuple(self.channel_names_s)
         # Convert some of the fields into integer values
         keys_encoding_bits = ['$P{0}B'.format(i) for i in self.channel_numbers]
 

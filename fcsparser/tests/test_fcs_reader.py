@@ -31,6 +31,7 @@ FILE_IDENTIFIER_TO_PATH = {
     'cyflow cube 8': os.path.join(BASE_PATH, 'cyflow_cube_8', 'cyflow_cube_8.fcs'),
     'fake bitmask error': os.path.join(BASE_PATH, 'fake_bitmask_error', 'fcs1_cleaned.lmd'),
     'Cytek xP5': os.path.join(BASE_PATH, 'Cytek_xP5', 'Cytek_xP5.fcs'),
+    'FACS Diva': os.path.join(BASE_PATH, 'FACS_Diva', 'facs_diva_test.fcs'),
 }
 
 # The group of files below is used for checking behavior other than reading data.
@@ -302,6 +303,26 @@ class TestFCSReader(unittest.TestCase):
 
         self.assertListEqual(channel_names, pns_names)
         self.assertListEqual(list(data.columns.values), pns_names)
+
+    def test_channel_namming_FACS_Diva(self):
+        """Check that channel names correspond to manual setting."""
+        path = FILE_IDENTIFIER_TO_PATH['FACS Diva']
+        meta = parse_fcs(path, meta_data_only=True,
+                         reformat_meta=True, channel_naming='$PnN')
+        channel_names = list(meta['_channel_names_'])
+        pnn_names = ['Time', 'FSC-A', 'FSC-W', 'SSC-A', 'FITC-A', 'PE-A', 'PerCP-A', 
+                     'PE-Cy7-A', 'PacificBlue-A', 'APC-A', 'Alexa700-A', 'APC-Cy7-A']
+        self.assertListEqual(channel_names, pnn_names)
+
+        meta = parse_fcs(path, meta_data_only=True,
+                         reformat_meta=True, channel_naming='$PnS')
+        channel_names = list(meta['_channel_names_'])
+        pns_names = ['Time', 'FSC-A', 'FSC-W', 'SSC-A', 'CD20', 'CD10', 'CD45',
+                      'CD34', 'Syto 41', 'CD19', 'CD38', 'APC-Cy7-A']
+        self.assertListEqual(channel_names, pns_names)
+
+        # self.assertListEqual(channel_names, pnn_names)
+        # self.assertListEqual(list(data.columns.values), pnn_names)
 
     def test_speed_of_reading_fcs_files(self):
         """Test the speed of loading a FCS files"""
