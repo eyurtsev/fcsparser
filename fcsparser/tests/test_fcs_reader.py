@@ -32,7 +32,7 @@ FILE_IDENTIFIER_TO_PATH = {'mq fcs 2.0': os.path.join(BASE_PATH, 'MiltenyiBiotec
                                                               'fcs1_cleaned.lmd'),
                            'Cytek xP5': os.path.join(BASE_PATH, 'Cytek_xP5', 'Cytek_xP5.fcs'),
                            'guava muse': os.path.join(BASE_PATH, 'GuavaMuse',
-                                                      'ADM_09SEP2020_181310.VIA.FCS'), }
+                                                      'Guava Muse.fcs'), }
 
 # The group of files below is used for checking behavior other than reading data.
 ADDITIONAL_FILE_MAPPING = {'duplicate_names': os.path.join(BASE_PATH, 'MiltenyiBiotec', 'FCS3.1',
@@ -248,45 +248,62 @@ class TestFCSReader(unittest.TestCase):
                                     [0., 171., 128., 153., 199., 91., 211., 12.]], dtype=np.float32)
         _assert_data_segment('Cytek xP5', expected_values, num_rows=2)
     
-    def test_multi_data_set(self):
+    def test_multipleTubesGiven_allTubesReadable(self):
         """Test reading a file with 4 data sets."""
         fname = FILE_IDENTIFIER_TO_PATH['guava muse']
         
         meta, df = parse_fcs(fname, data_set=0)
         # Verify some attributes of the metadata.
-        self.assertEqual(len(meta), 179)
+        self.assertEqual(len(meta), 185)
         self.assertEqual(meta["__header__"],
-                         {'FCS format': b'FCS3.0', 'analysis end': 0, 'analysis start': 0,
-                          'data end': 321674, 'data start': 3275, 'text end': 3274,
-                          'text start': 58})
+                         {'FCS format': b'FCS3.0', 'text start': 58, 'text end': 3445, 'data start': 3446,
+                           'data end': 7765, 'analysis start': 0, 'analysis end': 0})
         
         assert_array_almost_equal(df.iloc[0].values, np.array(
-            [7.684869e+02, 1.325000e+01, 7.266137e+00, 1.325000e+01, 1.195385e+03, 1.325000e+01,
-             1.233000e+03, 2.885637e+00, 8.613036e-01, 3.077508e+00], dtype=np.float32), decimal=4)
+            [4.8193130e+02, 7.5000000e+00, 8.4225601e+01, 7.5000000e+00, 3.9587415e+02, 
+             7.5000000e+00, 3.5964000e+04, 2.6829851e+00, 1.9254441e+00, 2.5975571e+00], dtype=np.float32), decimal=4)
         
         meta, df = parse_fcs(fname, data_set=1)
         # Verify the metadata matches the content of the first segment
         self.assertEqual(meta["__header__"],
-                         {'FCS format': b'FCS3.0', 'analysis end': 321675, 'analysis start': 321675,
-                          'data end': 1160719, 'data start': 324840, 'text end': 324839,
-                          'text start': 321733})
+                         {'FCS format': b'FCS3.0', 'text start': 7824, 'text end': 11102, 'data start': 11103,
+                          'data end': 2014342, 'analysis start': 7766, 'analysis end': 7766})
         assert_array_almost_equal(df.iloc[0].values, np.array(
-            [404.2231, 10.25, 6.858559, 10.25, 473.75034, 10.25, 10., 2.606621, 0.836233, 2.67555],
+            [ 59.691692,2., 13.230962 , 2.0, 258.7247, 2.0, 0.0, 1.7759138, 1.1215914, 2.412838 ],
             dtype=np.float32))
         
         meta, df = parse_fcs(fname, data_set=2)
         assert_array_almost_equal(df.iloc[0].values, np.array(
-            [404.2231, 10.25, 6.858559, 10.25, 473.75034, 10.25, 10., 2.606621, 0.836233, 2.67555],
+            [3.0277637e+02, 4.3000000e+01, 3.6813263e+02, 4.3000000e+01, 5.3055557e+03, 4.3000000e+01, 
+             3.5000000e+01, 2.4811220e+00, 2.5660043e+00, 3.7247310e+00],
             dtype=np.float32))
         self.assertEqual(meta["__header__"],
-                         {'FCS format': b'FCS3.0', 'analysis end': 321675, 'analysis start': 321675,
-                          'data end': 1160719, 'data start': 324840, 'text end': 324839,
-                          'text start': 321733})
+                         {'FCS format': b'FCS3.0', 'text start': 2014401, 'text end': 2017683, 'data start': 2017684, 
+                          'data end': 6477523, 'analysis start': 2014343, 'analysis end': 2014343})
         meta, df = parse_fcs(fname, data_set=3)
         assert_array_almost_equal(df.iloc[0].values, np.array(
-            [404.2231, 10.25, 6.858559, 10.25, 473.75034, 10.25, 10., 2.606621, 0.836233, 2.67555],
+            [146.52184, 1.75,  13.888326, 1.75, 231.7306, 1.75,  13.,
+            2.1659024, 1.1426499, 2.3649833],
             dtype=np.float32))
+        self.assertEqual(meta["__header__"],
+                         {'FCS format': b'FCS3.0', 'text start': 6477582, 'text end': 6480857, 'data start': 6480858,
+                           'data end': 8482337, 'analysis start': 6477524, 'analysis end': 6477524})
+        
+    def test_multipleTubesGiven_differentTubesHaveDifferentData(self):
+        """Test reading a file with 4 data sets."""
+        fname = FILE_IDENTIFIER_TO_PATH['guava muse']
+        
+        meta1, df1 = parse_fcs(fname, data_set=0)
+        meta2, df2 = parse_fcs(fname, data_set=1)
+        self.assertNotEqual(len(df1), len(df2))
+
+        meta2, df3 = parse_fcs(fname, data_set=2)
+        self.assertNotEqual(len(df2), len(df3))
+
+        meta2, df4 = parse_fcs(fname, data_set=3)
+        self.assertNotEqual(len(df3), len(df4))
     
+
     def test_fcs_reader_API(self):
         """Make sure that the API remains consistent."""
         for fname in FILE_IDENTIFIER_TO_PATH.values():

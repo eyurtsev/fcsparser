@@ -1,3 +1,7 @@
 .idea
 **/*.pyc
 .cache
+/venv
+/build
+/.vscode
+/dist
