@@ -310,16 +310,20 @@ class TestFCSReader(unittest.TestCase):
         meta = parse_fcs(path, meta_data_only=True,
                          reformat_meta=True, channel_naming='$PnN')
         channel_names = list(meta['_channel_names_'])
+        channel_meta = meta['_channels_']
         pnn_names = ['Time', 'FSC-A', 'FSC-W', 'SSC-A', 'FITC-A', 'PE-A', 'PerCP-A', 
                      'PE-Cy7-A', 'PacificBlue-A', 'APC-A', 'Alexa700-A', 'APC-Cy7-A']
         self.assertListEqual(channel_names, pnn_names)
+        self.assertListEqual(list(channel_meta["$PnN"]), pnn_names)
 
         meta = parse_fcs(path, meta_data_only=True,
                          reformat_meta=True, channel_naming='$PnS')
         channel_names = list(meta['_channel_names_'])
+        channel_meta = meta['_channels_']
         pns_names = ['Time', 'FSC-A', 'FSC-W', 'SSC-A', 'CD20', 'CD10', 'CD45',
                       'CD34', 'Syto 41', 'CD19', 'CD38', 'APC-Cy7-A']
         self.assertListEqual(channel_names, pns_names)
+        self.assertListEqual(list(channel_meta["$PnS"]), pns_names)
 
         # self.assertListEqual(channel_names, pnn_names)
         # self.assertListEqual(list(data.columns.values), pnn_names)

@@ -595,6 +595,9 @@ class FCSParser(object):
         if '$PnE' in column_names:
             df['$PnE'] = df['$PnE'].apply(lambda x: x.split(','))
 
+        if self._channel_naming not in df.columns.names:
+            df[self._channel_naming] = self.get_channel_names()
+
         df.index.name = 'Channel Number'
         meta['_channels_'] = df
         meta['_channel_names_'] = self.get_channel_names()
