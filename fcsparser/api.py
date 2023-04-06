@@ -348,7 +348,10 @@ class FCSParser(object):
         else:
             self.channel_numbers = range(1, pars + 1)  # Channel numbers start from 1
 
+        
         # Extract parameter names
+        channel_names_n = []
+        channel_names_s = []
         for i in self.channel_numbers:
             n_key = '$P{0}N'.format(i)
             s_key = '$P{0}S'.format(i)
@@ -359,11 +362,11 @@ class FCSParser(object):
             if s_key in text.keys():
                 name_s = text[s_key]
             
-            self.channel_names_n.append(name_n)
-            self.channel_names_s.append(name_s if name_s != "" else name_n)
+            channel_names_n.append(name_n)
+            channel_names_s.append(name_s if name_s != "" else name_n)
 
-        self.channel_names_n = tuple(self.channel_names_n)
-        self.channel_names_s = tuple(self.channel_names_s)
+        self.channel_names_n = tuple(channel_names_n)
+        self.channel_names_s = tuple(channel_names_s)
         # Convert some of the fields into integer values
         keys_encoding_bits = ['$P{0}B'.format(i) for i in self.channel_numbers]
 
