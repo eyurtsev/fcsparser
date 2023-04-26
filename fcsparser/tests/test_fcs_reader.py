@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os
 import timeit
 import unittest
@@ -31,17 +29,15 @@ FILE_IDENTIFIER_TO_PATH = {
     'cyflow cube 8': os.path.join(BASE_PATH, 'cyflow_cube_8', 'cyflow_cube_8.fcs'),
     'fake bitmask error': os.path.join(BASE_PATH, 'fake_bitmask_error', 'fcs1_cleaned.lmd'),
     'Cytek xP5': os.path.join(BASE_PATH, 'Cytek_xP5', 'Cytek_xP5.fcs'),
-    'FACS Diva': os.path.join(BASE_PATH, 'FACS_Diva', 'facs_diva_test.fcs'),
 }
 
 # The group of files below is used for checking behavior other than reading data.
-ADDITIONAL_FILE_MAPPING = {
-    'duplicate_names': os.path.join(BASE_PATH, 'MiltenyiBiotec', 'FCS3.1',
-                                    'SG_2014-09-26_Duplicate_Names.fcs'),
-    'corrupted_file': os.path.join(BASE_PATH, 'corrupted', 'corrupted.fcs'),
-    'test_channel_naming': os.path.join(BASE_PATH, 'MiltenyiBiotec', 'FCS3.1',
-                                        'EY_2013-07-19_PBS_FCS_3.1_Well_A1.001.fcs')
-}
+ADDITIONAL_FILE_MAPPING = {'duplicate_names': os.path.join(BASE_PATH, 'MiltenyiBiotec', 'FCS3.1',
+                                                           'SG_2014-09-26_Duplicate_Names.fcs'),
+                           'corrupted_file': os.path.join(BASE_PATH, 'corrupted', 'corrupted.fcs'),
+                           'test_channel_naming': os.path.join(BASE_PATH, 'MiltenyiBiotec',
+                                                               'FCS3.1',
+                                                               'EY_2013-07-19_PBS_FCS_3.1_Well_A1.001.fcs')}
 
 
 def _assert_data_segment(file_name, expected_array_values, num_rows=4):
@@ -50,9 +46,7 @@ def _assert_data_segment(file_name, expected_array_values, num_rows=4):
     meta, df = parse_fcs(file_path)
     actual_df = df.values[:num_rows, :]
     err_msg = "Failure for file {}".format(file_name) + "\n" + str(actual_df)
-    assert_array_almost_equal(
-        actual_df, expected_array_values, decimal=4, err_msg=err_msg
-    )
+    assert_array_almost_equal(actual_df, expected_array_values, decimal=4, err_msg=err_msg)
 
 
 class TestFCSReader(unittest.TestCase):
@@ -63,28 +57,28 @@ class TestFCSReader(unittest.TestCase):
         self.assertEqual('EY_2013-07-19_PBS_FCS_2.0_Custom_Without_Add_Well_A1.001.fcs',
                          meta['$FIL'])
         self.assertEqual('MACSQuant', meta['$CYT'])
-
+    
     def test_mq_FCS_3_0_text_segment(self):
         """Test TEXT segment parsed from FCS (3.0 format) file from a MACSQuant flow cytometer."""
         fname = FILE_IDENTIFIER_TO_PATH['mq fcs 3.0']
         meta = parse_fcs(fname, meta_data_only=True)
-
+        
         expected_fname = 'EY_2013-07-19_PID_101_MG1655_Transformants_D01_Well_A4.001.fcs'
         self.assertEqual(expected_fname, meta['$FIL'])
         self.assertEqual('MACSQuant', meta['$CYT'])
-
+    
     def test_mq_FCS_3_1_text_segment(self):
         """Test TEXT segment parsed from FCS (3.1 format) file from a MACSQuant flow cytometer."""
         fname = FILE_IDENTIFIER_TO_PATH['mq fcs 3.1']
         meta = parse_fcs(fname, meta_data_only=True)
         self.assertEqual('MACSQuant', meta['$CYT'])
-
+    
     def test_repeated_delimiter_text_segment(self):
         parser = FCSParser()
         raw_text = '/flow_speed/3 m//s/x/a///y/b/////'
         text = parser._extract_text_dict(raw_text)
         self.assertDictEqual(text, {'flow_speed': '3 m/s', 'x': 'a/', 'y': 'b//'})
-
+    
     def whitespace_delimiter_test_helper(self, has_final_delimiter: bool):
         parser = FCSParser()
         delimiter = '\t'
@@ -97,11 +91,10 @@ class TestFCSReader(unittest.TestCase):
     
     def test_whitespace_delimited_text_extraction(self):
         TestFCSReader.whitespace_delimiter_test_helper(self, has_final_delimiter=True)
-
-
+    
     def test_whitespace_delimited_text_extraction_no_final_delimiter(self):
         TestFCSReader.whitespace_delimiter_test_helper(self, has_final_delimiter=False)
-
+    
     def test_mq_FCS_2_0_data_segment(self):
         """Test DATA segment parsed from FCS (2.0 format) file from a MACSQuant flow cytometer"""
         values = np.array([[1.60764902830123901367e-03, 1.46554875373840332031e+00,
@@ -136,9 +129,9 @@ class TestFCSReader(unittest.TestCase):
                             5.19020110368728637695e-02, 3.99166643619537353516e-01,
                             6.50129623413085937500e+01, 3.03109139204025268555e-01,
                             8.76159846782684326172e-01, 1.67871810913085937500e+02]])
-
+        
         _assert_data_segment('mq fcs 2.0', values)
-
+    
     def test_mq_FCS_3_0_data_segment(self):
         """Test DATA segment parsed from FCS (3.0 format) file from a MACSQuant flow cytometer"""
         values = np.array([[4.99655876159667968750e+01, -1.78884857177734375000e+02,
@@ -173,9 +166,9 @@ class TestFCSReader(unittest.TestCase):
                             6.74475479125976562500e+01, 1.77987319946289062500e+02,
                             4.96691835937500000000e+04, -3.04502067565917968750e+01,
                             2.20916580200195312500e+02, -1.28346718750000000000e+04]])
-
+        
         _assert_data_segment('mq fcs 3.0', values)
-
+    
     def test_BD_LSR_II(self):
         """Test DATA segment parsed from FCS (3.0 format) file from HTS BD LSR-II flow cytometer"""
         values = np.array([[-2.85312500000000000000e+04, 1.00000000000000000000e+01,
@@ -203,7 +196,7 @@ class TestFCSReader(unittest.TestCase):
                             1.57080001831054687500e+02, 8.97599945068359375000e+01,
                             6.99999988079071044922e-01]])
         _assert_data_segment('LSR II fcs 3.0', values)
-
+    
     def test_Fortessa_data_segment(self):
         """Test DATA segment parsed from FCS (3.0 format) file from a Fortessa flow cytometer."""
         values = np.array([[1.31284997558593750000e+03, 5.60000000000000000000e+02,
@@ -231,31 +224,82 @@ class TestFCSReader(unittest.TestCase):
                             7.23799972534179687500e+01, -1.29600009918212890625e+01,
                             1.00000001490116119385e-01]])
         _assert_data_segment('Fortessa fcs 3.0', values)
-
+    
     def test_mq_FCS_3_1_data_segment(self):
         """Test DATA segment parsed from FCS (3.1 format) file from a MACSQuant flow cytometer"""
         self.maxDiff = None
-        expected_values = np.array(
-            [[1.2572854e-05, 3.3333333e-04, 3.3333333e-04, 8.3999999e-02,
-              6.2567286e-02, 2.0574589e+00, 1.5204989e+01, 2.6814053e+00,
-              3.0260124e+00, 4.4305920e+02, 2.6206520e-01, 1.0939966e+00,
-              1.1977422e+02, 2.3151575e-01, 5.0724781e-01, 2.2820773e+02,
-              -4.5996591e-01, 3.7070319e-01, -5.7914429e+02],
-             [4.7575682e-03, 6.6666666e-04, 6.6666666e-04, 8.3999999e-02,
-              1.6067501e+00, 2.2405643e+00, 3.5855927e+02, 1.9021651e+00,
-              1.9273795e+00, 4.9345886e+02, 1.3695779e-01, 8.0407977e-01,
-              8.5164307e+01, 5.2790873e-02, 5.0724781e-01, 5.2036572e+01,
-              5.7199156e-01, 6.8167728e-01, 4.1184045e+02]]
-        )
+        expected_values = np.array([
+            [1.2572854e-05, 3.3333333e-04, 3.3333333e-04, 8.3999999e-02, 6.2567286e-02,
+             2.0574589e+00, 1.5204989e+01, 2.6814053e+00, 3.0260124e+00, 4.4305920e+02,
+             2.6206520e-01, 1.0939966e+00, 1.1977422e+02, 2.3151575e-01, 5.0724781e-01,
+             2.2820773e+02, -4.5996591e-01, 3.7070319e-01, -5.7914429e+02],
+            [4.7575682e-03, 6.6666666e-04, 6.6666666e-04, 8.3999999e-02, 1.6067501e+00,
+             2.2405643e+00, 3.5855927e+02, 1.9021651e+00, 1.9273795e+00, 4.9345886e+02,
+             1.3695779e-01, 8.0407977e-01, 8.5164307e+01, 5.2790873e-02, 5.0724781e-01,
+             5.2036572e+01, 5.7199156e-01, 6.8167728e-01, 4.1184045e+02]])
         _assert_data_segment('mq fcs 3.1', expected_values, num_rows=2)
-
+    
     def test_cytek_x_p5_data_segment(self):
         """Test the 3-byte-wide DATA segment from a Cytek xP5"""
-        expected_values = np.array(
-            [[0., 286., 164., 154., 54., 470., 1023., 770.],
-             [0., 171., 128., 153., 199., 91., 211., 12.]], dtype=np.float32
-        )
+        expected_values = np.array([[0., 286., 164., 154., 54., 470., 1023., 770.],
+                                    [0., 171., 128., 153., 199., 91., 211., 12.]], dtype=np.float32)
         _assert_data_segment('Cytek xP5', expected_values, num_rows=2)
+    
+    def test_multipleTubesGiven_allTubesReadable(self):
+        """Test reading a file with 4 data sets."""
+        fname = FILE_IDENTIFIER_TO_PATH['guava muse']
+        
+        meta, df = parse_fcs(fname, data_set=0)
+        # Verify some attributes of the metadata.
+        self.assertEqual(len(meta), 185)
+        self.assertEqual(meta["__header__"],
+                         {'FCS format': b'FCS3.0', 'text start': 58, 'text end': 3445, 'data start': 3446,
+                           'data end': 7765, 'analysis start': 0, 'analysis end': 0})
+        
+        assert_array_almost_equal(df.iloc[0].values, np.array(
+            [4.8193130e+02, 7.5000000e+00, 8.4225601e+01, 7.5000000e+00, 3.9587415e+02, 
+             7.5000000e+00, 3.5964000e+04, 2.6829851e+00, 1.9254441e+00, 2.5975571e+00], dtype=np.float32), decimal=4)
+        
+        meta, df = parse_fcs(fname, data_set=1)
+        # Verify the metadata matches the content of the first segment
+        self.assertEqual(meta["__header__"],
+                         {'FCS format': b'FCS3.0', 'text start': 7824, 'text end': 11102, 'data start': 11103,
+                          'data end': 2014342, 'analysis start': 7766, 'analysis end': 7766})
+        assert_array_almost_equal(df.iloc[0].values, np.array(
+            [ 59.691692,2., 13.230962 , 2.0, 258.7247, 2.0, 0.0, 1.7759138, 1.1215914, 2.412838 ],
+            dtype=np.float32))
+        
+        meta, df = parse_fcs(fname, data_set=2)
+        assert_array_almost_equal(df.iloc[0].values, np.array(
+            [3.0277637e+02, 4.3000000e+01, 3.6813263e+02, 4.3000000e+01, 5.3055557e+03, 4.3000000e+01, 
+             3.5000000e+01, 2.4811220e+00, 2.5660043e+00, 3.7247310e+00],
+            dtype=np.float32))
+        self.assertEqual(meta["__header__"],
+                         {'FCS format': b'FCS3.0', 'text start': 2014401, 'text end': 2017683, 'data start': 2017684, 
+                          'data end': 6477523, 'analysis start': 2014343, 'analysis end': 2014343})
+        meta, df = parse_fcs(fname, data_set=3)
+        assert_array_almost_equal(df.iloc[0].values, np.array(
+            [146.52184, 1.75,  13.888326, 1.75, 231.7306, 1.75,  13.,
+            2.1659024, 1.1426499, 2.3649833],
+            dtype=np.float32))
+        self.assertEqual(meta["__header__"],
+                         {'FCS format': b'FCS3.0', 'text start': 6477582, 'text end': 6480857, 'data start': 6480858,
+                           'data end': 8482337, 'analysis start': 6477524, 'analysis end': 6477524})
+        
+    def test_multipleTubesGiven_differentTubesHaveDifferentData(self):
+        """Test reading a file with 4 data sets."""
+        fname = FILE_IDENTIFIER_TO_PATH['guava muse']
+        
+        meta1, df1 = parse_fcs(fname, data_set=0)
+        meta2, df2 = parse_fcs(fname, data_set=1)
+        self.assertNotEqual(len(df1), len(df2))
+
+        meta2, df3 = parse_fcs(fname, data_set=2)
+        self.assertNotEqual(len(df2), len(df3))
+
+        meta2, df4 = parse_fcs(fname, data_set=3)
+        self.assertNotEqual(len(df3), len(df4))
+    
 
     def test_fcs_reader_API(self):
         """Make sure that the API remains consistent."""
@@ -268,39 +312,38 @@ class TestFCSReader(unittest.TestCase):
             meta, data_pandas = parse_fcs(fname, meta_data_only=False, reformat_meta=True)
             self.assertIsInstance(meta['_channel_names_'], tuple)
             self.assertGreater(len(meta['_channel_names_']), 0)
-
+    
     def test_channel_naming_manual(self):
         """Check that channel names correspond to manual setting."""
-        pnn_names = ['Time', 'HDR-CE', 'HDR-SE', 'HDR-V', 'FSC-A', 'FSC-H', 'FSC-W',
-                     'SSC-A', 'SSC-H', 'SSC-W', 'FL2-A', 'FL2-H', 'FL2-W', 'FL4-A',
-                     'FL4-H', 'FL4-W', 'FL7-A', 'FL7-H', 'FL7-W']
-
+        pnn_names = ['Time', 'HDR-CE', 'HDR-SE', 'HDR-V', 'FSC-A', 'FSC-H', 'FSC-W', 'SSC-A',
+                     'SSC-H', 'SSC-W', 'FL2-A', 'FL2-H', 'FL2-W', 'FL4-A', 'FL4-H', 'FL4-W',
+                     'FL7-A', 'FL7-H', 'FL7-W']
+        
         path = ADDITIONAL_FILE_MAPPING['test_channel_naming']
-        meta = parse_fcs(path, meta_data_only=True,
-                         reformat_meta=True, channel_naming='$PnN')
+        meta = parse_fcs(path, meta_data_only=True, reformat_meta=True, channel_naming='$PnN')
         channel_names = list(meta['_channel_names_'])
-
+        
         self.assertListEqual(channel_names, pnn_names)
-
+        
         # ---  Test with data
-
-        meta, data = parse_fcs(path, meta_data_only=False,
-                               reformat_meta=True, channel_naming='$PnN')
+        
+        meta, data = parse_fcs(path, meta_data_only=False, reformat_meta=True,
+                               channel_naming='$PnN')
         channel_names = list(meta['_channel_names_'])
-
+        
         self.assertListEqual(channel_names, pnn_names)
         self.assertListEqual(list(data.columns.values), pnn_names)
-
+        
         # ---  Test with data
-
-        pns_names = ['HDR-T', 'HDR-CE', 'HDR-SE', 'HDR-V', 'FSC-A', 'FSC-H', 'FSC-W',
-                     'SSC-A', 'SSC-H', 'SSC-W', 'V2-A', 'V2-H', 'V2-W', 'Y2-A',
-                     'Y2-H', 'Y2-W', 'B1-A', 'B1-H', 'B1-W']
-
-        meta, data = parse_fcs(path, meta_data_only=False,
-                               reformat_meta=True, channel_naming='$PnS')
+        
+        pns_names = ['HDR-T', 'HDR-CE', 'HDR-SE', 'HDR-V', 'FSC-A', 'FSC-H', 'FSC-W', 'SSC-A',
+                     'SSC-H', 'SSC-W', 'V2-A', 'V2-H', 'V2-W', 'Y2-A', 'Y2-H', 'Y2-W', 'B1-A',
+                     'B1-H', 'B1-W']
+        
+        meta, data = parse_fcs(path, meta_data_only=False, reformat_meta=True,
+                               channel_naming='$PnS')
         channel_names = list(meta['_channel_names_'])
-
+        
         self.assertListEqual(channel_names, pns_names)
         self.assertListEqual(list(data.columns.values), pns_names)
 
@@ -332,69 +375,61 @@ class TestFCSReader(unittest.TestCase):
         """Test the speed of loading a FCS files"""
         file_path = FILE_IDENTIFIER_TO_PATH['mq fcs 3.1']
         number = 1000
-
-        time = timeit.timeit(
-            lambda: parse_fcs(file_path, meta_data_only=True, reformat_meta=False), number=number)
-
+        
+        time = timeit.timeit(lambda: parse_fcs(file_path, meta_data_only=True, reformat_meta=False),
+                             number=number)
+        
         print('Loading fcs file {0} times with meta_data only without reformatting of '
               'meta takes {1} per loop'.format(time / number, number))
-
-        time = timeit.timeit(
-            lambda: parse_fcs(file_path, meta_data_only=True, reformat_meta=True), number=number)
+        
+        time = timeit.timeit(lambda: parse_fcs(file_path, meta_data_only=True, reformat_meta=True),
+                             number=number)
         print('Loading fcs file {0} times with meta_data only with reformatting of '
               'meta takes {1} per loop'.format(time / number, number))
-
+        
         time = timeit.timeit(
             lambda: parse_fcs(file_path, meta_data_only=False, reformat_meta=False), number=number)
-
+        
         print('Loading fcs file {0} times both meta and data but without reformatting of '
               'meta takes {1} per loop'.format(time / number, number))
-
+    
     def test_reading_corrupted_fcs_file(self):
         """Raise exception when reading a corrupted fcs file."""
         file_path = ADDITIONAL_FILE_MAPPING['corrupted_file']
-
+        
         # This is raising the wrong error unfortunately. (Should raise a ParseError.)
         # Will require major version bump to fix API.
         with self.assertRaises(ValueError):
             parse_fcs(file_path)
-
+    
     def test_reading_large_fcs_file(self):
         """Find data segment of a large FCS file."""
-        values = np.array([[1.31284998e+03, 5.60000000e+02, 1.53640969e+05,
-                            1.47263989e+03, 1.42400000e+03, 6.77745312e+04,
-                            1.79399986e+01, 8.57999992e+00, 1.37059998e+02,
-                            -3.67200012e+01, 0.00000000e+00],
-                           [9.15529968e+02, 2.97000000e+02, 2.02020781e+05,
-                            3.24479980e+02, 3.49000000e+02, 6.09315781e+04,
-                            2.33999996e+01, 7.79999971e+00, 1.65550003e+02,
-                            2.01599998e+01, 0.00000000e+00],
-                           [2.27150000e+03, 5.49000000e+02, 2.62143000e+05,
-                            8.54099976e+02, 8.65000000e+02, 6.47101641e+04,
-                            2.49599991e+01, 2.65199986e+01, 5.77500000e+01,
-                            1.36800003e+01, 1.00000001e-01],
-                           [2.33232983e+03, 5.83000000e+02, 2.62143000e+05,
-                            6.24000000e+02, 6.27000000e+02, 6.52224297e+04,
-                            2.49599991e+01, 4.91399994e+01, 7.23799973e+01,
-                            -1.29600010e+01, 1.00000001e-01]], dtype=numpy.float32)
+        values = np.array([[1.31284998e+03, 5.60000000e+02, 1.53640969e+05, 1.47263989e+03,
+                            1.42400000e+03, 6.77745312e+04, 1.79399986e+01, 8.57999992e+00,
+                            1.37059998e+02, -3.67200012e+01, 0.00000000e+00],
+                           [9.15529968e+02, 2.97000000e+02, 2.02020781e+05, 3.24479980e+02,
+                            3.49000000e+02, 6.09315781e+04, 2.33999996e+01, 7.79999971e+00,
+                            1.65550003e+02, 2.01599998e+01, 0.00000000e+00],
+                           [2.27150000e+03, 5.49000000e+02, 2.62143000e+05, 8.54099976e+02,
+                            8.65000000e+02, 6.47101641e+04, 2.49599991e+01, 2.65199986e+01,
+                            5.77500000e+01, 1.36800003e+01, 1.00000001e-01],
+                           [2.33232983e+03, 5.83000000e+02, 2.62143000e+05, 6.24000000e+02,
+                            6.27000000e+02, 6.52224297e+04, 2.49599991e+01, 4.91399994e+01,
+                            7.23799973e+01, -1.29600010e+01, 1.00000001e-01]], dtype=numpy.float32)
         _assert_data_segment('large fake fcs', values)
-
+    
     def test_reading_bitmask_error(self):
         """Check correct bitmasking of partial Integer fields in data segment."""
-        values = np.array([[5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2],
-                           [5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2],
-                           [5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2],
-                           [5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2]], dtype=numpy.float32)
+        values = np.array([[5.28000000e+2, 5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2],
+                           [5.28000000e+2, 5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2],
+                           [5.28000000e+2, 5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2],
+                           [5.28000000e+2, 5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
+                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2]], dtype=numpy.float32)
         _assert_data_segment('fake bitmask error', values)
-
+    
     def test_reading_in_memory_fcs_file(self):
         """Find data segment of an in-memory FCS file."""
         values = np.array([[4.99655876159667968750e+01, -1.78884857177734375000e+02,
@@ -430,10 +465,10 @@ class TestFCSReader(unittest.TestCase):
                             4.96691835937500000000e+04, -3.04502067565917968750e+01,
                             2.20916580200195312500e+02, -1.28346718750000000000e+04]])
         fname = FILE_IDENTIFIER_TO_PATH['mq fcs 3.0']
-
+        
         with open(fname, 'rb') as f:
             data = f.read()
-
+        
         matrix = FCSParser.from_data(data).data
         diff = numpy.abs(values - matrix[0:4, :])
         self.assertTrue(numpy.all(diff < 10 ** -8))
@@ -441,7 +476,7 @@ class TestFCSReader(unittest.TestCase):
 
 class TestMultiDtypeParsing(unittest.TestCase):
     """Verify that parsing of an fcs file that's composed of multiple dtypes works."""
-
+    
     @pytest.mark.skip(reason="Needs to be fixed, appears broken from initial commit")
     def test_parse_into_numpy_data_correctly(self):
         """Test that we can parse the data into a numpy matrix correctly.
@@ -456,7 +491,7 @@ class TestMultiDtypeParsing(unittest.TestCase):
         fcsparser = FCSParser(path=fname)
         # Make sure that data gets parsed as 2-dimensional
         self.assertEquals(fcsparser.data.shape, (725, 10))
-
+    
     def test_parsed_into_dataframe_correctly(self):
         """Test that we can parse the data into a dataframe correctly."""
         fname = FILE_IDENTIFIER_TO_PATH['cyflow cube 8']
@@ -466,15 +501,8 @@ class TestMultiDtypeParsing(unittest.TestCase):
         # Make sure that data gets parsed as 2-dimensional
         self.assertEquals(fcsparser.dataframe.shape, (725, 10))
         # Verify that the values are correct.
-        assert_array_equal(
-            fcsparser.dataframe.values[:2, :],
-            np.array(
-                [
-                    [8, 7, 15, 15, 5, 8, 7, 6, 23, 0],
-                    [6, 7, 13, 14, 6, 9, 10, 4, 23, 0]
-                ]
-            )
-        )
+        assert_array_equal(fcsparser.dataframe.values[:2, :], np.array(
+            [[8, 7, 15, 15, 5, 8, 7, 6, 23, 0], [6, 7, 13, 14, 6, 9, 10, 4, 23, 0]]))
 
 
 # FCS file that contains only the header.
@@ -487,7 +515,7 @@ class TestHeaderParsing(unittest.TestCase):
         # Validate that a user warning is raised.
         with pytest.warns(UserWarning):
             fcs_parser = FCSParser(read_data=False, path=CYTEK_NL_2000_sample_header)
-
+        
         # Check that some of the header has been parsed
         self.assertIsInstance(fcs_parser.annotation, dict)
         # Verify number of keys
