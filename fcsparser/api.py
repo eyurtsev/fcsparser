@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-"""
-Parser for FCS 2.0, 3.0, 3.1 files. Python 2/3 compatible.
-`
+"""Parser for FCS 2.0, 3.0, 3.1 files. Python 2/3 compatible.
+
 Distributed under the MIT License.
 
 Useful documentation for dtypes in numpy
@@ -34,26 +32,26 @@ def fromfile(file, dtype, count, *args, **kwargs):
     # dtype.  for example, if we were encoding a list of two-dimensional
     # points on a plane, each point would be represented by a record
     # containing two fields, each of which was a four-byte float
-    # represented by the dtype 'f4'.  thus, the record would be 
+    # represented by the dtype 'f4'.  thus, the record would be
     # specified by dtype("f4, f4").
-    
-    # numpy's functions expect all field widths to be a power of two  
+
+    # numpy's functions expect all field widths to be a power of two
     # (because this is how such things are stored in memory.)
-    # unfortunately, some pathological cytometers don't make their 
+    # unfortunately, some pathological cytometers don't make their
     # records a power-of-two wide.  For example, a Cytek xP5 encodes
     # records in their DATA segment in three-byte-wide integers --
     # this comes in as a dtype of "i3", which makes numpy freak out.
 
     # To address this, we convert the requested dtype so that each
-    # record is read as a series of one-byte-wide unsigned integers 
+    # record is read as a series of one-byte-wide unsigned integers
     # ('u1'), pad out each record with NUL bytes until it is
     # a power-of-two wide, then re-convert it to the requested
     # dtype (but with a power-of-two width) and return it.
 
     # what dtypes were we asked for?
-    dtypes = dtype.split(',')
+    dtypes = dtype.split(",")
     field_widths = []
-    
+
     # how wide is each dtype?
     for dt in dtypes:
         num_bytes = int(dt[2:])
@@ -61,28 +59,28 @@ def fromfile(file, dtype, count, *args, **kwargs):
 
     # how many bytes wide is the total record?
     record_width = sum(field_widths)
-      
-    # read the DATA segment into a 1 x `count` array of records. 
+
+    # read the DATA segment into a 1 x `count` array of records.
     # each record has a number of `u1` (one-byte unsigned integers)
     # equal to `record_width`.
     try:
-        ret = numpy.fromfile(file, 
-                             dtype=",".join(['u1'] * record_width), 
-                             count=count, 
-                             *args, 
-                             **kwargs)
+        ret = numpy.fromfile(
+            file, dtype=",".join(["u1"] * record_width), count=count, *args, **kwargs
+        )
     except (TypeError, IOError):
-        ret = numpy.frombuffer(file.read(count * record_width),
-                               dtype=",".join(['u1'] * record_width), 
-                               count=count, 
-                               *args, 
-                               **kwargs)
+        ret = numpy.frombuffer(
+            file.read(count * record_width),
+            dtype=",".join(["u1"] * record_width),
+            count=count,
+            *args,
+            **kwargs
+        )
 
-    # convert the DATA segment from a 1 x `count` array of records 
-    # (and remember, each record is composed of `record_width` 
-    # 1-byte unsigned ints) to a `record_width` x `count` array of 
+    # convert the DATA segment from a 1 x `count` array of records
+    # (and remember, each record is composed of `record_width`
+    # 1-byte unsigned ints) to a `record_width` x `count` array of
     # 'u1' unsigned ints.
-    ret = ret.view('u1').reshape((count, record_width))
+    ret = ret.view("u1").reshape((count, record_width))
 
     # now, for each requested dtype.....
     ret_dtypes = []
@@ -95,7 +93,9 @@ def fromfile(file, dtype, count, *args, **kwargs):
         # while num_bytes is NOT a power of two....
         while num_bytes & (num_bytes - 1) != 0:
             # ...insert another COLUMN of NUL bytes at the front of the field....
-            ret = numpy.insert(ret, sum(field_widths[0:field_idx]), numpy.zeros(count), axis=1)
+            ret = numpy.insert(
+                ret, sum(field_widths[0:field_idx]), numpy.zeros(count), axis=1
+            )
 
             # ....and increment the number of bytes for this field.
             num_bytes = num_bytes + 1
@@ -106,7 +106,7 @@ def fromfile(file, dtype, count, *args, **kwargs):
 
     # now, "cast" the newly padded array as the desired data types,
     # and return it.
-    return ret.view(','.join(ret_dtypes)).ravel()
+    return ret.view(",".join(ret_dtypes)).ravel()
 
 
 class ParserFeatureNotImplementedError(Exception):
@@ -114,7 +114,14 @@ class ParserFeatureNotImplementedError(Exception):
 
 
 class FCSParser(object):
-    def __init__(self, path=None, read_data=True, channel_naming='$PnS', data_set=0, encoding='utf-8'):
+    def __init__(
+        self,
+        path=None,
+        read_data=True,
+        channel_naming="$PnS",
+        data_set=0,
+        encoding="utf-8",
+    ):
         """Parse FCS files.
 
         Compatible with most FCS 2.0, 3.0, 3.1 files.
@@ -174,14 +181,14 @@ class FCSParser(object):
         self._analysis = None
         self._file_size = 0
 
-        if channel_naming not in ('$PnN', '$PnS'):
-            raise ValueError(u'channel_naming must be either "$PnN" or "$PnS"')
+        if channel_naming not in ("$PnN", "$PnS"):
+            raise ValueError('channel_naming must be either "$PnN" or "$PnS"')
 
         self.annotation = {}
         self.path = path
 
         if path:
-            with open(path, 'rb') as f:
+            with open(path, "rb") as f:
                 self.load_file(f, data_set=data_set, read_data=read_data)
 
     def load_file(self, file_handle, data_set=0, read_data=True):
@@ -195,16 +202,16 @@ class FCSParser(object):
         while data_segments <= data_set:
             self.read_header(file_handle, nextdata_offset)
             self.read_text(file_handle)
-            if '$NEXTDATA' in self.annotation:
+            if "$NEXTDATA" in self.annotation:
                 data_segments += 1
-                nextdata_offset += self.annotation['$NEXTDATA']
+                nextdata_offset += self.annotation["$NEXTDATA"]
                 file_handle.seek(nextdata_offset)
                 if nextdata_offset == 0 and data_segments < data_set:
                     warnings.warn("File does not contain the number of data sets.")
                     break
             else:
                 if data_segments != 0:
-                    warnings.warn('File does not contain $NEXTDATA information.')
+                    warnings.warn("File does not contain $NEXTDATA information.")
                 break
         if read_data:
             self.read_data(file_handle)
@@ -234,45 +241,57 @@ class FCSParser(object):
             file_handle: buffer containing FCS file.
             nextdata_offset: byte offset of a set header from file start specified by $NEXTDATA
         """
-        header = {'FCS format': file_handle.read(6)}
+        header = {"FCS format": file_handle.read(6)}
 
         file_handle.read(4)  # 4 space characters after the FCS format
 
-        for field in ('text start', 'text end', 'data start', 'data end', 'analysis start',
-                      'analysis end'):
+        for field in (
+            "text start",
+            "text end",
+            "data start",
+            "data end",
+            "analysis start",
+            "analysis end",
+        ):
             s = file_handle.read(8)
             try:
                 field_value = int(s)
             except ValueError:
                 field_value = 0
             header[field] = field_value + nextdata_offset
-        # In some .fcs files, 'text end' and 'data start' are equal, e.g., 
+        # In some .fcs files, 'text end' and 'data start' are equal, e.g.,
         # http://flowrepository.org/experiments/2241/download_ziped_files
         # and this would lead to a mistake when run @_extract_text_dict
         # We should avoid this situation.
-        if header['text end'] == header['data start']:
-            header['text end'] = header['text end'] - 1
+        if header["text end"] == header["data start"]:
+            header["text end"] = header["text end"] - 1
 
         # Checking that the location of the TEXT segment is specified
-        for k in ('text start', 'text end'):
+        for k in ("text start", "text end"):
             if header[k] == 0:
-                raise ValueError(u'The FCS file "{}" seems corrupted. (Parser cannot locate '
-                                 u'information about the "{}" segment.)'.format(self.path, k))
+                raise ValueError(
+                    'The FCS file "{}" seems corrupted. (Parser cannot locate '
+                    'information about the "{}" segment.)'.format(self.path, k)
+                )
             elif header[k] > self._file_size:
-                raise ValueError(u'The FCS file "{}" is corrupted. "{}" segment '
-                                 u'is larger than file size'.format(self.path, k))
+                raise ValueError(
+                    'The FCS file "{}" is corrupted. "{}" segment '
+                    "is larger than file size".format(self.path, k)
+                )
             else:
                 # All OK
                 pass
 
-        self._data_start = header['data start']
-        self._data_end = header['data start']
+        self._data_start = header["data start"]
+        self._data_end = header["data start"]
 
-        if header['analysis end'] - header['analysis start'] != 0:
-            warnings.warn(u'There appears to be some information in the ANALYSIS segment of file '
-                          u'{0}. However, it might not be read correctly.'.format(self.path))
+        if header["analysis end"] - header["analysis start"] != 0:
+            warnings.warn(
+                "There appears to be some information in the ANALYSIS segment of file "
+                "{0}. However, it might not be read correctly.".format(self.path)
+            )
 
-        self.annotation['__header__'] = header
+        self.annotation["__header__"] = header
 
     @staticmethod
     def _extract_text_dict(raw_text):
@@ -284,10 +303,14 @@ class FCSParser(object):
             if delimiter.strip() == delimiter:
                 raw_text = raw_text.strip()
             if raw_text[-1] != delimiter:
-                msg = (u'The first two characters were:\n {}. The last two characters were: {}\n'
-                       u'Parser expects the same delimiter character in beginning '
-                       u'and end of TEXT segment. '
-                       u'This file may be parsed incorrectly!'.format(raw_text[:2], raw_text[-2:]))
+                msg = (
+                    "The first two characters were:\n {}. The last two characters were: {}\n"
+                    "Parser expects the same delimiter character in beginning "
+                    "and end of TEXT segment. "
+                    "This file may be parsed incorrectly!".format(
+                        raw_text[:2], raw_text[-2:]
+                    )
+                )
                 warnings.warn(msg)
                 raw_text = raw_text[1:]
             else:
@@ -307,7 +330,7 @@ class FCSParser(object):
         for partial_element_list in nested_split_list[1:]:
             # Rejoin two parts of an element that was split by an escaped delimiter (the end and
             # start of two successive sub-lists in nested_split_list)
-            raw_text_elements[-1] += (delimiter + partial_element_list[0])
+            raw_text_elements[-1] += delimiter + partial_element_list[0]
             raw_text_elements.extend(partial_element_list[1:])
 
         keys, values = raw_text_elements[0::2], raw_text_elements[1::2]
@@ -319,21 +342,23 @@ class FCSParser(object):
         The TEXT segment contains meta data associated with the FCS file.
         Converting all meta keywords to lower case.
         """
-        header = self.annotation['__header__']  # For convenience
+        header = self.annotation["__header__"]  # For convenience
 
         #####
         # Read in the TEXT segment of the FCS file
         # There are some differences in how the
-        file_handle.seek(header['text start'], 0)
-        raw_text = file_handle.read(header['text end'] - header['text start'] + 1)
+        file_handle.seek(header["text start"], 0)
+        raw_text = file_handle.read(header["text end"] - header["text start"] + 1)
         try:
             raw_text = raw_text.decode(self._encoding)
         except UnicodeDecodeError as e:
             # Catching the exception and logging it in this way kills the traceback, but
             # we can worry about this later.
-            logger.warning(u'Encountered an illegal utf-8 byte in the header.\n Illegal utf-8 '
-                           u'characters will be ignored.\n{}'.format(e))
-            raw_text = raw_text.decode(self._encoding, errors='ignore')
+            logger.warning(
+                "Encountered an illegal utf-8 byte in the header.\n Illegal utf-8 "
+                "characters will be ignored.\n{}".format(e)
+            )
+            raw_text = raw_text.decode(self._encoding, errors="ignore")
 
         text = self._extract_text_dict(raw_text)
 
@@ -342,20 +367,22 @@ class FCSParser(object):
         # and other fields into numeric data types (from string)
         # Note: do not use regular expressions for manipulations here.
         # Regular expressions are too heavy in terms of computation time.
-        pars = int(text['$PAR'])
-        if '$P0B' in text.keys():  # Checking whether channel number count starts from 0 or from 1
+        pars = int(text["$PAR"])
+        if (
+            "$P0B" in text.keys()
+        ):  # Checking whether channel number count starts from 0 or from 1
             self.channel_numbers = range(0, pars)  # Channel number count starts from 0
         else:
             self.channel_numbers = range(1, pars + 1)  # Channel numbers start from 1
 
         # Extract parameter names
         try:
-            names_n = tuple([text['$P{0}N'.format(i)] for i in self.channel_numbers])
+            names_n = tuple([text["$P{0}N".format(i)] for i in self.channel_numbers])
         except KeyError:
             names_n = []
 
         try:
-            names_s = tuple([text['$P{0}S'.format(i)] for i in self.channel_numbers])
+            names_s = tuple([text["$P{0}S".format(i)] for i in self.channel_numbers])
         except KeyError:
             names_s = []
 
@@ -363,9 +390,9 @@ class FCSParser(object):
         self.channel_names_n = names_n
 
         # Convert some of the fields into integer values
-        keys_encoding_bits = ['$P{0}B'.format(i) for i in self.channel_numbers]
+        keys_encoding_bits = ["$P{0}B".format(i) for i in self.channel_numbers]
 
-        add_keys_to_convert_to_int = ['$NEXTDATA', '$PAR', '$TOT']
+        add_keys_to_convert_to_int = ["$NEXTDATA", "$PAR", "$TOT"]
 
         keys_to_convert_to_int = keys_encoding_bits + add_keys_to_convert_to_int
 
@@ -378,9 +405,9 @@ class FCSParser(object):
         # Update data start segments if needed
 
         if self._data_start == 0:
-            self._data_start = int(text['$BEGINDATA'])
+            self._data_start = int(text["$BEGINDATA"])
         if self._data_end == 0:
-            self._data_end = int(text['$ENDDATA'])
+            self._data_end = int(text["$ENDDATA"])
 
     def read_analysis(self, file_handle):
         """Read the ANALYSIS segment of the FCS file and store it in self.analysis.
@@ -391,8 +418,8 @@ class FCSParser(object):
         Args:
             file_handle: buffer containing FCS data
         """
-        start = self.annotation['__header__']['analysis start']
-        end = self.annotation['__header__']['analysis end']
+        start = self.annotation["__header__"]["analysis start"]
+        end = self.annotation["__header__"]["analysis end"]
         if start != 0 and end != 0:
             file_handle.seek(start, 0)
             self._analysis = file_handle.read(end - start)
@@ -404,22 +431,25 @@ class FCSParser(object):
         text = self.annotation
         keys = text.keys()
 
-        if '$MODE' not in text or text['$MODE'] != 'L':
-            raise ParserFeatureNotImplementedError(u'Mode not implemented')
+        if "$MODE" not in text or text["$MODE"] != "L":
+            raise ParserFeatureNotImplementedError("Mode not implemented")
 
-        if '$P0B' in keys:
-            raise ParserFeatureNotImplementedError(u'Not expecting a parameter starting at 0')
+        if "$P0B" in keys:
+            raise ParserFeatureNotImplementedError(
+                "Not expecting a parameter starting at 0"
+            )
 
-        if text['$BYTEORD'] not in ['1,2,3,4', '4,3,2,1', '1,2', '2,1']:
-            raise ParserFeatureNotImplementedError(u'$BYTEORD {} '
-                                                   u'not implemented'.format(text['$BYTEORD']))
+        if text["$BYTEORD"] not in ["1,2,3,4", "4,3,2,1", "1,2", "2,1"]:
+            raise ParserFeatureNotImplementedError(
+                "$BYTEORD {} " "not implemented".format(text["$BYTEORD"])
+            )
 
     def get_channel_names(self):
         """Get list of channel names. Raises a warning if the names are not unique."""
         names_s, names_n = self.channel_names_s, self.channel_names_n
 
         # Figure out which channel names to use
-        if self._channel_naming == '$PnS':
+        if self._channel_naming == "$PnS":
             channel_names, channel_names_alternate = names_s, names_n
         else:
             channel_names, channel_names_alternate = names_n, names_s
@@ -428,14 +458,16 @@ class FCSParser(object):
             channel_names = channel_names_alternate
 
         if len(set(channel_names)) != len(channel_names):
-            msg = (u'The default channel names (defined by the {} '
-                   u'parameter in the FCS file) were not unique. To avoid '
-                   u'problems in downstream analysis, the channel names '
-                   u'have been switched to the alternate channel names '
-                   u'defined in the FCS file. To avoid '
-                   u'seeing this warning message, explicitly instruct '
-                   u'the FCS parser to use the alternate channel names by '
-                   u'specifying the channel_naming parameter.')
+            msg = (
+                "The default channel names (defined by the {} "
+                "parameter in the FCS file) were not unique. To avoid "
+                "problems in downstream analysis, the channel names "
+                "have been switched to the alternate channel names "
+                "defined in the FCS file. To avoid "
+                "seeing this warning message, explicitly instruct "
+                "the FCS parser to use the alternate channel names by "
+                "specifying the channel_naming parameter."
+            )
             msg = msg.format(self._channel_naming)
             warnings.warn(msg)
             channel_names = channel_names_alternate
@@ -448,48 +480,57 @@ class FCSParser(object):
         text = self.annotation
 
         if (self._data_start > self._file_size) or (self._data_end > self._file_size):
-            raise ValueError(u'The FCS file "{}" is corrupted. Part of the data segment '
-                             u'is missing.'.format(self.path))
+            raise ValueError(
+                'The FCS file "{}" is corrupted. Part of the data segment '
+                "is missing.".format(self.path)
+            )
 
-        num_events = text['$TOT']  # Number of events recorded
-        num_pars = text['$PAR']  # Number of parameters recorded
+        num_events = text["$TOT"]  # Number of events recorded
+        num_pars = text["$PAR"]  # Number of parameters recorded
 
-        if text['$BYTEORD'].strip() == '1,2,3,4' or text['$BYTEORD'].strip() == '1,2':
-            endian = '<'
-        elif text['$BYTEORD'].strip() == '4,3,2,1' or text['$BYTEORD'].strip() == '2,1':
-            endian = '>'
+        if text["$BYTEORD"].strip() == "1,2,3,4" or text["$BYTEORD"].strip() == "1,2":
+            endian = "<"
+        elif text["$BYTEORD"].strip() == "4,3,2,1" or text["$BYTEORD"].strip() == "2,1":
+            endian = ">"
         else:
-            msg = 'Unrecognized byte order ({})'.format(text['$BYTEORD'])
+            msg = "Unrecognized byte order ({})".format(text["$BYTEORD"])
             raise ParserFeatureNotImplementedError(msg)
 
         # dictionary to convert from FCS format to numpy convention
-        conversion_dict = {'F': 'f', 'D': 'f', 'I': 'u'}
+        conversion_dict = {"F": "f", "D": "f", "I": "u"}
 
-        if text['$DATATYPE'] not in conversion_dict.keys():
-            raise ParserFeatureNotImplementedError('$DATATYPE = {0} is not yet '
-                                                   'supported.'.format(text['$DATATYPE']))
+        if text["$DATATYPE"] not in conversion_dict.keys():
+            raise ParserFeatureNotImplementedError(
+                "$DATATYPE = {0} is not yet " "supported.".format(text["$DATATYPE"])
+            )
 
         # Calculations to figure out data types of each of parameters
         # $PnB specifies the number of bits reserved for a measurement of parameter n
-        bytes_per_par_list = [int(text['$P{0}B'.format(i)] / 8) for i in self.channel_numbers]
+        bytes_per_par_list = [
+            int(text["$P{0}B".format(i)] / 8) for i in self.channel_numbers
+        ]
 
         par_numeric_type_list = [
-            '{endian}{type}{size}'.format(endian=endian,
-                                          type=conversion_dict[text['$DATATYPE']],
-                                          size=bytes_per_par)
+            "{endian}{type}{size}".format(
+                endian=endian,
+                type=conversion_dict[text["$DATATYPE"]],
+                size=bytes_per_par,
+            )
             for bytes_per_par in bytes_per_par_list
         ]
 
         # Parser for list mode. Here, the order is a list of tuples.
         # Each tuple stores event related information
-        file_handle.seek(self._data_start, 0)  # Go to the part of the file where data starts
+        file_handle.seek(
+            self._data_start, 0
+        )  # Go to the part of the file where data starts
 
         ##
         # Read in the data
         if len(set(par_numeric_type_list)) > 1:
             # This branch deals with files in which the different columns (channels)
             # were encoded with different types; i.e., a mixed data format.
-            dtype = ','.join(par_numeric_type_list)
+            dtype = ",".join(par_numeric_type_list)
             data = fromfile(file_handle, dtype, num_events)
 
             # The dtypes in the numpy array `data` above are associated with both a name
@@ -502,7 +543,9 @@ class FCSParser(object):
             names = self.get_channel_names()
 
             if six.PY2:
-                encoded_names = [name.encode('ascii', errors='replace') for name in names]
+                encoded_names = [
+                    name.encode("ascii", errors="replace") for name in names
+                ]
             else:  # Assume that python3 or older then.
                 encoded_names = [name for name in names]
 
@@ -515,7 +558,7 @@ class FCSParser(object):
         ##
         # Convert to native byte order
         # This is needed for working with pandas data structures
-        native_code = '<' if (sys.byteorder == 'little') else '>'
+        native_code = "<" if (sys.byteorder == "little") else ">"
         if endian != native_code:
             # swaps the actual bytes and also the endianness
             data = data.byteswap().newbyteorder()
@@ -524,19 +567,24 @@ class FCSParser(object):
         if text["$DATATYPE"] == "I":
             if len(set(par_numeric_type_list)) > 1:
                 for channel_number in self.channel_numbers:
-                    valid_bits = numpy.ceil(numpy.log2(float(text["$P{0}R".format(channel_number)])))
+                    valid_bits = numpy.ceil(
+                        numpy.log2(float(text["$P{0}R".format(channel_number)]))
+                    )
 
                     if bytes_per_par_list[channel_number - 1] * 8 == valid_bits:
                         continue
 
                     name = data.dtype.names[channel_number - 1]
-                    bitmask = numpy.array([2 ** valid_bits - 1], dtype=data[name].dtype)
+                    bitmask = numpy.array([2**valid_bits - 1], dtype=data[name].dtype)
                     data[name] = data[name] & bitmask
             else:
-                valid_bits_per_par_list = numpy.array([
-                    2 ** numpy.ceil(numpy.log2(float(text["$P{0}R".format(i)]))) - 1
-                    for i in self.channel_numbers
-                ], dtype=data.dtype)
+                valid_bits_per_par_list = numpy.array(
+                    [
+                        2 ** numpy.ceil(numpy.log2(float(text["$P{0}R".format(i)]))) - 1
+                        for i in self.channel_numbers
+                    ],
+                    dtype=data.dtype,
+                )
                 data &= valid_bits_per_par_list
 
         self._data = data
@@ -545,7 +593,7 @@ class FCSParser(object):
     def data(self):
         """Get parsed DATA segment of the FCS file."""
         if self._data is None:
-            with open(self.path, 'rb') as f:
+            with open(self.path, "rb") as f:
                 self.read_data(f)
         return self._data
 
@@ -553,7 +601,7 @@ class FCSParser(object):
     def analysis(self):
         """Get ANALYSIS segment of the FCS file."""
         if self._analysis is None:
-            with open(self.path, 'rb') as f:
+            with open(self.path, "rb") as f:
                 self.read_analysis(f)
         return self._analysis
 
@@ -567,35 +615,36 @@ class FCSParser(object):
         channel_properties = []
 
         for key, value in meta.items():
-            if key[:3] == '$P1':
+            if key[:3] == "$P1":
                 if key[3] not in string.digits:
                     channel_properties.append(key[3:])
 
         # Capture all the channel information in a list of lists -- used to create a data frame
         channel_matrix = [
-            [meta.get('$P{0}{1}'.format(ch, p)) for p in channel_properties]
+            [meta.get("$P{0}{1}".format(ch, p)) for p in channel_properties]
             for ch in self.channel_numbers
         ]
 
         # Remove this information from the dictionary
         for ch in self.channel_numbers:
             for p in channel_properties:
-                key = '$P{0}{1}'.format(ch, p)
+                key = "$P{0}{1}".format(ch, p)
                 if key in meta:
                     meta.pop(key)
 
-        num_channels = meta['$PAR']
-        column_names = ['$Pn{0}'.format(p) for p in channel_properties]
+        num_channels = meta["$PAR"]
+        column_names = ["$Pn{0}".format(p) for p in channel_properties]
 
-        df = pd.DataFrame(channel_matrix, columns=column_names,
-                          index=(1 + numpy.arange(num_channels)))
+        df = pd.DataFrame(
+            channel_matrix, columns=column_names, index=(1 + numpy.arange(num_channels))
+        )
 
-        if '$PnE' in column_names:
-            df['$PnE'] = df['$PnE'].apply(lambda x: x.split(','))
+        if "$PnE" in column_names:
+            df["$PnE"] = df["$PnE"].apply(lambda x: x.split(","))
 
-        df.index.name = 'Channel Number'
-        meta['_channels_'] = df
-        meta['_channel_names_'] = self.get_channel_names()
+        df.index.name = "Channel Number"
+        meta["_channels_"] = df
+        meta["_channel_names_"] = self.get_channel_names()
 
     @property
     def dataframe(self):
@@ -605,8 +654,16 @@ class FCSParser(object):
         return pd.DataFrame(data, columns=channel_names)
 
 
-def parse(path, meta_data_only=False, compensate=False, channel_naming='$PnS',
-          reformat_meta=False, data_set=0, dtype='float32', encoding="utf-8"):
+def parse(
+    path,
+    meta_data_only=False,
+    compensate=False,
+    channel_naming="$PnS",
+    reformat_meta=False,
+    data_set=0,
+    dtype="float32",
+    encoding="utf-8",
+):
     """Parse an fcs file at the location specified by the path.
 
     Parameters
@@ -661,12 +718,19 @@ def parse(path, meta_data_only=False, compensate=False, channel_naming='$PnS',
     meta, data_pandas = parse_fcs(fname, meta_data_only=False)
     """
     if compensate:
-        raise ParserFeatureNotImplementedError(u'Compensation has not been implemented yet.')
+        raise ParserFeatureNotImplementedError(
+            "Compensation has not been implemented yet."
+        )
 
     read_data = not meta_data_only
 
-    fcs_parser = FCSParser(path, read_data=read_data, channel_naming=channel_naming,
-                           data_set=data_set, encoding=encoding)
+    fcs_parser = FCSParser(
+        path,
+        read_data=read_data,
+        channel_naming=channel_naming,
+        data_set=data_set,
+        encoding=encoding,
+    )
 
     if reformat_meta:
         fcs_parser.reformat_meta()
@@ -679,4 +743,3 @@ def parse(path, meta_data_only=False, compensate=False, channel_naming='$PnS',
         df = fcs_parser.dataframe
         df = df.astype(dtype) if dtype else df
         return meta, df
-    

@@ -3,11 +3,6 @@ FCSParser
 
 fcsparser is a python package for reading fcs files. 
 
-.. image:: https://travis-ci.org/eyurtsev/fcsparser.svg?branch=master
-   :target: http://travis-ci.org/eyurtsev/fcsparser
-   :alt: Build Status
-
-
 Install
 ==================
 

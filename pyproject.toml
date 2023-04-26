@@ -1,6 +1,70 @@
-[build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
+[tool.poetry]
+name = "fcsparser"
+version = "0.2.4"
+description = "A python package for reading raw fcs files"
+authors = ["Eugene Yurtsev <eyurtsev@gmail.com>"]
+license = "MIT"
+readme = "README.rst"
+repository = "https://www.github.com/eyurtsev/kor"
+keywords = ["flow cytometry", "data analysis", "cytometry", "parser", "data"]
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Topic :: Scientific/Engineering :: Medical Science Apps.",
 ]
-build-backend = "setuptools.build_meta"
+
+[tool.poetry.dependencies]
+python = "^3.8.0"
+pandas = "^1.5.3"
+numpy = "^1"
+
+[tool.poetry.group.dev.dependencies]
+jupyterlab = "^3.6.1"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.1"
+black = { version="^23.1.0", extras=["jupyter"] }
+poethepoet = "^0.18.1"
+ruff = "^0.0.255"
+pytest-cov = "^4.0.0"
+
+[tool.poetry.group.typing.dependencies]
+mypy = "^0.991"
+
+[tool.poe.tasks]
+black = "black"
+ruff = "ruff"
+pytest.cmd = "py.test --durations=5 -W error::RuntimeWarning --cov --cov-config=.coveragerc --cov-report xml --cov-report term-missing:skip-covered"
+mypy = "mypy . --pretty --show-error-codes"
+fix = { shell = "poe black . && poe ruff --fix ." }
+fix_docs = "black docs"
+# Using a --preview feature. Commit your code prior to use this fix.
+fix_strings = "black kor --preview"
+test = { shell = "poe black . --check --diff && poe ruff . && poe pytest && poe mypy" }
+# Use to auto-generate docs
+apidoc = "sphinx-apidoc -o docs/source/generated kor"
+
+[tool.ruff]
+select = [
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+]
+
+# Same as Black.
+line-length = 88
+
+[tool.mypy]
+disallow_untyped_defs = "True"
+ignore_missing_imports = "True"
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+]
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
