@@ -24,8 +24,7 @@ Using
     >>> path = fcsparser.test_sample_path
     >>> meta, data = fcsparser.parse(path, reformat_meta=True)
 
-A more detailed example can be found here: http://nbviewer.ipython.org/github/eyurtsev/fcsparser/blob/master/doc/fcsparser_example.ipynb
-
+A more detailed example can be found here: https://github.com/eyurtsev/fcsparser/blob/master/doc/fcsparser_example.ipynb
 
 Features
 ===================
