@@ -379,15 +379,11 @@ class FCSParser(object):
         # Extract parameter names
         channel_names_n = []
         channel_names_s = []
-        for i in self.channel_numbers:
-            n_key = '$P{0}N'.format(i)
-            s_key = '$P{0}S'.format(i)
-            name_n = ""
-            name_s = ""
-            if n_key in text.keys():
-                name_n = text[n_key]
-            if s_key in text.keys():
-                name_s = text[s_key]
+        for channel_number in self.channel_numbers:
+            n_key = f'$P{channel_number}N'
+            s_key = f'$P{channel_number}S'
+            name_n = text.get(n_key, "")
+            name_s = text.get(s_key, "")
             
             channel_names_n.append(name_n)
             channel_names_s.append(name_s if name_s != "" else name_n)
@@ -396,7 +392,7 @@ class FCSParser(object):
         self.channel_names_s = tuple(channel_names_s)
         
         # Convert some of the fields into integer values
-        keys_encoding_bits = ["$P{0}B".format(i) for i in self.channel_numbers]
+        keys_encoding_bits = [f"$P{channel_number}B" for channel_number in self.channel_numbers]
 
         add_keys_to_convert_to_int = ["$NEXTDATA", "$PAR", "$TOT"]
 
