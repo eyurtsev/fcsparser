@@ -1,4 +1,3 @@
 include *.txt
 global-include *.fcs
-include versioneer.py
 include fcsparser/_version.py
