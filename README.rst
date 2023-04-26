@@ -1,7 +1,12 @@
 FCSParser
 =================
 
+
 fcsparser is a python package for reading fcs files. 
+
+.. image:: https://github.com/eyurtsev/kor/actions/workflows/test.yml/badge.svg?branch=main&event=push   
+   :target: https://github.com/eyurtsev/kor/actions/workflows/test.yml
+   :alt: Unit Tests
 
 Install
 ==================
