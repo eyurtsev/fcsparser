@@ -2,6 +2,9 @@
 **/*.pyc
 .cache
 /venv
-/build
 /.vscode
+/build
 /dist
+versioneer.py
+/fcsparser.egg-info
+setup.cfg

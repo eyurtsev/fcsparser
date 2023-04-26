@@ -375,22 +375,24 @@ class FCSParser(object):
         else:
             self.channel_numbers = range(1, pars + 1)  # Channel numbers start from 1
 
+        
         # Extract parameter names
-        try:
-            names_n = tuple([text["$P{0}N".format(i)] for i in self.channel_numbers])
-        except KeyError:
-            names_n = []
+        channel_names_n = []
+        channel_names_s = []
+        for channel_number in self.channel_numbers:
+            n_key = f'$P{channel_number}N'
+            s_key = f'$P{channel_number}S'
+            name_n = text.get(n_key, "")
+            name_s = text.get(s_key, "")
+            
+            channel_names_n.append(name_n)
+            channel_names_s.append(name_s if name_s != "" else name_n)
 
-        try:
-            names_s = tuple([text["$P{0}S".format(i)] for i in self.channel_numbers])
-        except KeyError:
-            names_s = []
-
-        self.channel_names_s = names_s
-        self.channel_names_n = names_n
-
+        self.channel_names_n = tuple(channel_names_n)
+        self.channel_names_s = tuple(channel_names_s)
+        
         # Convert some of the fields into integer values
-        keys_encoding_bits = ["$P{0}B".format(i) for i in self.channel_numbers]
+        keys_encoding_bits = [f"$P{channel_number}B" for channel_number in self.channel_numbers]
 
         add_keys_to_convert_to_int = ["$NEXTDATA", "$PAR", "$TOT"]
 
@@ -642,9 +644,12 @@ class FCSParser(object):
         if "$PnE" in column_names:
             df["$PnE"] = df["$PnE"].apply(lambda x: x.split(","))
 
-        df.index.name = "Channel Number"
-        meta["_channels_"] = df
-        meta["_channel_names_"] = self.get_channel_names()
+        if self._channel_naming not in df.columns.names:
+            df[self._channel_naming] = self.get_channel_names()
+
+        df.index.name = 'Channel Number'
+        meta['_channels_'] = df
+        meta['_channel_names_'] = self.get_channel_names()
 
     @property
     def dataframe(self):
