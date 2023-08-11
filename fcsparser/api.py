@@ -68,13 +68,18 @@ def fromfile(file, dtype, count, *args, **kwargs):
             file, dtype=",".join(["u1"] * record_width), count=count, *args, **kwargs
         )
     except (TypeError, IOError):
-        ret = numpy.frombuffer(
+        _ret = numpy.frombuffer(
             file.read(count * record_width),
             dtype=",".join(["u1"] * record_width),
             count=count,
             *args,
             **kwargs
         )
+        # Create a copy of the file content as `numpy.frombuffer`
+        # returns a view into the original object which is not 
+        # safe for mutable file buffers.
+        # See https://numpy.org/doc/stable/reference/generated/numpy.frombuffer.html
+        ret = _ret.copy()
 
     # convert the DATA segment from a 1 x `count` array of records
     # (and remember, each record is composed of `record_width`
