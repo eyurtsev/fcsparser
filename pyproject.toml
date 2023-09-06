@@ -20,7 +20,7 @@ pandas = "^1.5.3"
 numpy = "^1"
 
 [tool.poetry.group.dev.dependencies]
-jupyterlab = "^3.6.1"
+jupyterlab = "^3"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.1"
