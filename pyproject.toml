@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fcsparser"
-version = "0.2.6"
+version = "0.2.7"
 description = "A python package for reading raw fcs files"
 authors = ["Eugene Yurtsev <eyurtsev@gmail.com>"]
 license = "MIT"
