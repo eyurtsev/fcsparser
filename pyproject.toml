@@ -16,18 +16,18 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8.0"
-pandas = "^1.5.3"
+pandas = "^2.1.1"
 numpy = "^1"
 
 [tool.poetry.group.dev.dependencies]
 jupyterlab = "^3"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.2.1"
-black = { version="^23.1.0", extras=["jupyter"] }
+pytest = "^7.4.2"
+black = { version = "^23.1.0", extras = ["jupyter"] }
 poethepoet = "^0.18.1"
-ruff = "^0.0.255"
-pytest-cov = "^4.0.0"
+ruff = "^0.0.292"
+pytest-cov = "^4.1.0"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
@@ -47,9 +47,9 @@ apidoc = "sphinx-apidoc -o docs/source/generated kor"
 
 [tool.ruff]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
+  "E", # pycodestyle
+  "F", # pyflakes
+  "I", # isort
 ]
 
 # Same as Black.
@@ -60,9 +60,7 @@ disallow_untyped_defs = "True"
 ignore_missing_imports = "True"
 
 [tool.coverage.run]
-omit = [
-    "tests/*",
-]
+omit = ["tests/*"]
 
 
 [build-system]
