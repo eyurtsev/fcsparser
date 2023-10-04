@@ -499,7 +499,7 @@ class TestMultiDtypeParsing(unittest.TestCase):
         # ['<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u4', '<u1']
         fcsparser = FCSParser(path=fname)
         # Make sure that data gets parsed as 2-dimensional
-        self.assertEquals(fcsparser.dataframe.shape, (725, 10))
+        self.assertEqual(fcsparser.dataframe.shape, (725, 10))
         # Verify that the values are correct.
         assert_array_equal(fcsparser.dataframe.values[:2, :], np.array(
             [[8, 7, 15, 15, 5, 8, 7, 6, 23, 0], [6, 7, 13, 14, 6, 9, 10, 4, 23, 0]]))
