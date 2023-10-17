@@ -3,7 +3,7 @@
 Distributed under the MIT License.
 
 Useful documentation for dtypes in numpy
-http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.byteswap.html?highlight=byteswap#numpy.ndarray.byteswap  # noqa
+http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.byteswap.html?highlight=byteswap#numpy.ndarray.byteswap
 http://docs.scipy.org/doc/numpy/user/basics.types.html
 http://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
 """
@@ -11,10 +11,10 @@ from __future__ import division
 
 import contextlib
 import logging
-from io import BytesIO
 import string
 import sys
 import warnings
+from io import BytesIO
 
 import numpy
 import pandas as pd
@@ -132,8 +132,10 @@ class FCSParser(object):
         Compatible with most FCS 2.0, 3.0, 3.1 files.
 
         self.annotation: a dictionary holding the parsed content of the TEXT segment
-                         In addition, a key called __header__ has been added to this dictionary
-                         It specifies the information parsed from the FCS file HEADER segment.
+                         In addition, a key called __header__ 
+                         has been added to this dictionary
+                         It specifies the information parsed 
+                         from the FCS file HEADER segment.
                          (This won't be necessary for most users.)
 
         self.data holds the parsed DATA segment
@@ -152,7 +154,8 @@ class FCSParser(object):
             channel_naming: '$PnS' | '$PnN'
                 Determines which meta data field is used for naming the channels.
 
-                The default should be $PnS (even though it is not guaranteed to be unique)
+                The default should be $PnS 
+                (even though it is not guaranteed to be unique)
 
                 $PnN stands for the short name (guaranteed to be unique).
                     Will look like 'FL1-H'
@@ -165,7 +168,8 @@ class FCSParser(object):
                 The program attempts to use the alternative field by default.
 
                 Note: These names are not flipped in the implementation.
-                It looks like they were swapped for some reason in the official FCS specification.
+                It looks like they were swapped 
+                for some reason in the official FCS specification.
             data_set: int
                 Index of retrieved data set in the fcs file.
                 This value specifies the data set being retrieved from an fcs file with
@@ -239,12 +243,14 @@ class FCSParser(object):
     def read_header(self, file_handle, nextdata_offset=0):
         """Read the header of the FCS file.
 
-        The header specifies where the annotation, data and analysis are located inside the binary
+        The header specifies where the annotation, data and analysis 
+        are located inside the binary
         file.
 
         Args:
             file_handle: buffer containing FCS file.
-            nextdata_offset: byte offset of a set header from file start specified by $NEXTDATA
+            nextdata_offset: byte offset of a set header 
+            from file start specified by $NEXTDATA
         """
         header = {"FCS format": file_handle.read(6)}
 
@@ -309,7 +315,8 @@ class FCSParser(object):
                 raw_text = raw_text.strip()
             if raw_text[-1] != delimiter:
                 msg = (
-                    "The first two characters were:\n {}. The last two characters were: {}\n"
+                    "The first two characters were:\n {}. "
+                    "The last two characters were: {}\n"
                     "Parser expects the same delimiter character in beginning "
                     "and end of TEXT segment. "
                     "This file may be parsed incorrectly!".format(
@@ -323,18 +330,20 @@ class FCSParser(object):
         else:
             raw_text = raw_text[1:-1]
 
-        # 1:-1 above removes the first and last characters which are reserved for the delimiter.
+        # 1:-1 above removes the first and last characters which are reserved 
+        # for the delimiter.
 
-        # The delimiter is escaped by being repeated (two consecutive delimiters). This code splits
-        # on the escaped delimiter first, so there is no need for extra logic to distinguish
+        # The delimiter is escaped by being repeated (two consecutive delimiters). 
+        # This code splits on the escaped delimiter first, 
+        # so there is no need for extra logic to distinguish
         # actual delimiters from escaped delimiters.
         nested_split_list = [x.split(delimiter) for x in raw_text.split(delimiter * 2)]
 
         # Flatten the nested list to a list of elements (alternating keys and values)
         raw_text_elements = nested_split_list[0]
         for partial_element_list in nested_split_list[1:]:
-            # Rejoin two parts of an element that was split by an escaped delimiter (the end and
-            # start of two successive sub-lists in nested_split_list)
+            # Rejoin two parts of an element that was split by an escaped delimiter 
+            # (the end and start of two successive sub-lists in nested_split_list)
             raw_text_elements[-1] += delimiter + partial_element_list[0]
             raw_text_elements.extend(partial_element_list[1:])
 
@@ -397,7 +406,9 @@ class FCSParser(object):
         self.channel_names_s = tuple(channel_names_s)
         
         # Convert some of the fields into integer values
-        keys_encoding_bits = [f"$P{channel_number}B" for channel_number in self.channel_numbers]
+        keys_encoding_bits = [
+            f"$P{channel_number}B" for channel_number in self.channel_numbers
+        ]
 
         add_keys_to_convert_to_int = ["$NEXTDATA", "$PAR", "$TOT"]
 
@@ -544,7 +555,8 @@ class FCSParser(object):
             # and a type; i.e.,
             # https://docs.scipy.org/doc/numpy/reference/generated/numpy.recarray.html
             # The names are assigned automatically.
-            # In order for this code to work correctly with the pandas DataFrame constructor,
+            # In order for this code to work correctly 
+            # with the pandas DataFrame constructor,
             # we convert the *names* of the dtypes to the channel names we want to use.
 
             names = self.get_channel_names()
@@ -615,7 +627,8 @@ class FCSParser(object):
     def reformat_meta(self):
         """Collect the meta data information in a more user friendly format.
 
-        Function looks through the meta data, collecting the channel related information into a
+        Function looks through the meta data, 
+        collecting the channel related information into a
         dataframe and moving it into the _channels_ key.
         """
         meta = self.annotation  # For shorthand (passed by reference)
@@ -626,7 +639,8 @@ class FCSParser(object):
                 if key[3] not in string.digits:
                     channel_properties.append(key[3:])
 
-        # Capture all the channel information in a list of lists -- used to create a data frame
+        # Capture all the channel information in a list of lists --
+        # used to create a data frame
         channel_matrix = [
             [meta.get("$P{0}{1}".format(ch, p)) for p in channel_properties]
             for ch in self.channel_numbers
@@ -681,8 +695,11 @@ def parse(
     path: str
         Path of .fcs file
     meta_data_only: bool
-        If True, the parse_fcs only returns the meta_data (the TEXT segment of the FCS file)
-    compensate: bool, reserved parameter to indicate whether the  FCS data should be compensated, unimplemented.
+        If True, the parse_fcs only returns the meta_data 
+        (the TEXT segment of the FCS file)
+    compensate: bool, 
+        reserved parameter to indicate whether the  FCS data 
+        should be compensated, unimplemented.
     channel_naming: '$PnS' | '$PnN'
         Determines which meta data field is used for naming the channels.
         The default should be $PnS (even though it is not guaranteed to be unique)
@@ -695,17 +712,21 @@ def parse(
         The chosen field will be used to population self.channels
 
         Note: These names are not flipped in the implementation.
-        It looks like they were swapped for some reason in the official FCS specification.
+        It looks like they were swapped for some reason 
+        in the official FCS specification.
     reformat_meta: bool
         If true, the meta data is reformatted with the channel information organized
         into a DataFrame and moved into the '_channels_' key
     data_set: int
         Index of retrieved data set in the fcs file.
-        This value specifies the data set being retrieved from an fcs file with multiple data sets.
+        This value specifies the data set being retrieved from an fcs file 
+        with multiple data sets.
     dtype: str | None
         If provided, will force convert all data into this dtype.
-        This is set by default to auto-convert to float32 to deal with cases in which the original
-        data has been stored using a smaller data type (e.g., unit8). This modifies the original
+        This is set by default to auto-convert to float32 
+        to deal with cases in which the original
+        data has been stored using a smaller data type (e.g., unit8). 
+        This modifies the original
         data, but should make follow up analysis safer in basically all cases.
     encoding: str
         Provide encoding type of the text section.

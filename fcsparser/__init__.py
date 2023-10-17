@@ -1,7 +1,7 @@
 import os
 
-from .version import __version__
 from .api import parse
+from .version import __version__
 
 test_sample_path = os.path.join(
     os.path.abspath(os.path.dirname(__file__)),
