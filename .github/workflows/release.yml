@@ -13,8 +13,8 @@ env:
 
 jobs:
   if_release:
-    # Disallow publishing from branches that aren't `main`.
-    if: github.ref == 'refs/heads/main'
+    # Disallow publishing from branches that aren't `master`.
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
