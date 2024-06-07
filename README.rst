@@ -15,7 +15,7 @@ Install
     
 or
     
-    $ conda install -c conda-forge fcsparser.
+    $ conda install -c conda-forge fcsparser
 
 Using
 ==================
