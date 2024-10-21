@@ -577,10 +577,13 @@ class FCSParser(object):
         ##
         # Convert to native byte order
         # This is needed for working with pandas data structures
-        native_code = "<" if (sys.byteorder == "little") else ">"
+        sys_is_le = sys.byteorder == 'little'
+        native_code = '<' if sys_is_le else '>'
+        swapped_code = '>' if sys_is_le else '<'
         if endian != native_code:
             # swaps the actual bytes and also the endianness
-            data = data.byteswap().newbyteorder()
+            # updated to be numpy>= 2.0 compliant
+            data = data.view(data.dtype.newbyteorder(swapped_code)).byteswap()
 
         # Mask off high bits if integer type data
         if text["$DATATYPE"] == "I":
