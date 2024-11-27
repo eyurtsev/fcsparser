@@ -5,7 +5,7 @@ description = "A python package for reading raw fcs files"
 authors = ["Eugene Yurtsev <eyurtsev@gmail.com>"]
 license = "MIT"
 readme = "README.rst"
-repository = "https://www.github.com/eyurtsev/kor"
+repository = "https://github.com/eyurtsev/fcsparser"
 keywords = ["flow cytometry", "data analysis", "cytometry", "parser", "data"]
 classifiers = [
   "Intended Audience :: Science/Research",
