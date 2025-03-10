@@ -357,6 +357,8 @@ class FCSParser(object):
         Converting all meta keywords to lower case.
         """
         header = self.annotation["__header__"]  # For convenience
+        # clear value for previous dataset
+        self.annotation = {"__header__": header}
 
         #####
         # Read in the TEXT segment of the FCS file
