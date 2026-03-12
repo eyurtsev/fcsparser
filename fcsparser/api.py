@@ -492,6 +492,99 @@ class FCSParser(object):
 
         return channel_names
 
+    def _transform_log_to_lin(self,data,text,mixed_types):
+        """
+        Transforms data from log to lin as given by $PnE parameter for each channel.
+        Data is not transformed if $PnE is '0.0,0.0' or not valid.
+
+        Parameters
+        ----------
+        data : array/recarray
+            raw data read from file by self.read_data
+        text : dict
+            Dict containing information from text segment as read from file.
+        mixed_types : Bool
+            True if file contains mixed data types
+
+        Returns
+        -------
+        none
+
+        """
+        # This method checks the content of $PnE parameter to do propper log to lin transformation.
+        # As defined for FCS files, data may be stored with linear or logarithmic scalining.
+        # The code checks consistency of given parameters and transforms data from log to lin
+        # for each parameter with propper log parameters. (see FCS definition for details)
+        # In case of log to lin transformation datatye is changed to float to handle the results
+        # of the non-linear transformation correctly.
+        channel_names=self.get_channel_names()
+        log_channels=[] # array of channels with log scaling
+        _dt=[] # array of data types of channels
+        _dec=[] # array of decades given by $PnE
+        _min=[] # array of minima given by $PnE 
+        _drange=[] # array of data ranges given y $PnR
+        for channel_number in self.channel_numbers:
+            # get amplifier parameters and check for errors
+            PnE=text["$P{0}E".format(channel_number)]
+            try:
+                # try to read parameters decades and minimum
+                [decades,minimum]=numpy.fromstring(PnE,sep=",",dtype=float)
+            except:
+                msg=(u'Amplifier parameters mal formated for channel {}.\n'
+                     u'$PnE shall be "0.0,0.0" for linear scaling. For log scaling '
+                     u'decades and minimum shall be positive numbers e.g. "4.0,0.1"\n'
+                     u'Continuing with linear scaling.')
+                logger.warning(msg.format(channel_number))
+                decades=0
+                minimum=0
+            if decades < 0 or minimum < 0 or (decades == 0 and minimum > 0): # settings not valid
+                msg=(u'Amplifier parameters not set correctly for channel {}.\n '
+                     u'Decades and minimum shall be positive numbers e.g. "4.0,0.1"\n'
+                     u'For linear scaling both shall be zero e.g. "0.0,0.0"\n'
+                     u'Continuing with linear scaling.')
+                logger.warning(msg.format(channel_number))
+                decades=0
+                minimum=0
+            elif decades > 0 and minimum == 0:
+                msg=(u'Positive number is given for decades but'
+                     u'zero is given for minimum for channel {}.'
+                     u'minimum shall not be zero because log(0) is not defined'
+                     u'Continuing with minimum set to 1')
+                logger.warning(msg.format(channel_number))
+                minimum = 1 # log(0) is not defined -> set minimum to 1
+            name = channel_names[channel_number - 1]
+            datarange=2**numpy.ceil(numpy.log2(float(text["$P{0}R".format(channel_number)])))
+            if decades == 0 and minimum == 0:
+                # data is linear
+                if mixed_types:
+                    _dt.append((name,data[name].dtype.str))
+                    # append current datatype to list for mixed types
+            else:
+                log_channels.append(channel_number)
+                # append type float to get correct linearised values
+                _dt.append((name,numpy.dtype(numpy.float32).str))
+                msg=(u'Transforming data log to lin for channel {} '
+                     u'using {} decades and minimum of {}.')
+                logger.info(msg.format(channel_number,decades,minimum))
+            _dec.append(decades)
+            _min.append(minimum)
+            _drange.append(datarange)
+        
+        if len(log_channels)>0:
+            # calculate linearised values
+            if mixed_types:
+                # deal with mixed data format and change data type of log channels
+                data=data.astype(numpy.dtype(_dt))
+                for channel_number in log_channels:
+                     name = channel_names[channel_number - 1]
+                     data[name]=10**(_dec[channel_number-1]*data[name]/_drange[channel_number-1])*_min[channel_number-1]
+            else:
+                # if single data type convert whole array to float32 (<f4)
+                data=data.astype(numpy.float32)
+                for channel_number in log_channels:
+                    data[:,channel_number-1]=10**(_dec[channel_number-1]*data[:,channel_number-1]/_drange[channel_number-1])*_min[channel_number-1]
+        self._data = data
+
     def read_data(self, file_handle):
         """Read the DATA segment of the FCS file."""
         self._verify_assumptions()
@@ -576,11 +669,12 @@ class FCSParser(object):
             data = data.reshape((num_events, num_pars))
         ##
         # Convert to native byte order
-        # This is needed for working with pandas data structures
+        # This is needed for working with pandas data structures for pandas < 2.2.0
         native_code = "<" if (sys.byteorder == "little") else ">"
         if endian != native_code:
             # swaps the actual bytes and also the endianness
-            data = data.byteswap().newbyteorder()
+            data = data.view(data.dtype.newbyteorder('S'))
+            data.byteswap(inplace=True)
 
         # Mask off high bits if integer type data
         if text["$DATATYPE"] == "I":
@@ -605,8 +699,11 @@ class FCSParser(object):
                     dtype=data.dtype,
                 )
                 data &= valid_bits_per_par_list
-
-        self._data = data
+            # For data type integer data may be stored log scaled
+            # transform_log_to_lin performes transformation if necessary:
+            self._transform_log_to_lin(data,text,len(set(par_numeric_type_list)) > 1)
+        else:
+            self._data = data
 
     @property
     def data(self):

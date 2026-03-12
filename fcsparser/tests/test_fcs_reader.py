@@ -243,8 +243,11 @@ class TestFCSReader(unittest.TestCase):
     
     def test_cytek_x_p5_data_segment(self):
         """Test the 3-byte-wide DATA segment from a Cytek xP5"""
-        expected_values = np.array([[0., 286., 164., 154., 54., 470., 1023., 770.],
-                                    [0., 171., 128., 153., 199., 91., 211., 12.]], dtype=np.float32)
+        expected_values = np.array([
+            [0.00000000e+00,2.86000000e+02,1.64000000e+02,3.99542046e+00,1.62531483e+00,
+             6.85389557e+01,9.91045898e+03,1.01815173e+03],
+            [0.00000000e+00,1.71000000e+02,1.28000000e+02,3.95964503e+00,5.98885441e+00,
+             2.26708984e+00,6.67142725e+00,1.11397386e+00]], dtype=np.float32)
         _assert_data_segment('Cytek xP5', expected_values, num_rows=2)
     
     def test_multipleTubesGiven_allTubesReadable(self):
@@ -420,14 +423,14 @@ class TestFCSReader(unittest.TestCase):
     
     def test_reading_bitmask_error(self):
         """Check correct bitmasking of partial Integer fields in data segment."""
-        values = np.array([[5.28000000e+2, 5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2],
-                           [5.28000000e+2, 5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2],
-                           [5.28000000e+2, 5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2],
-                           [5.28000000e+2, 5.28000000e+2, 5.28000000e+2, 5.28000000e+2,
-                            5.28000000e+2, 5.28000000e+2, 5.28000000e+2]], dtype=numpy.float32)
+        values = np.array([[528.      , 528.      ,  11.824966,  11.824966,  11.824966,
+                 11.824966,  11.824966],
+               [528.      , 528.      ,  11.824966,  11.824966,  11.824966,
+                 11.824966,  11.824966],
+               [528.      , 528.      ,  11.824966,  11.824966,  11.824966,
+                 11.824966,  11.824966],
+               [528.      , 528.      ,  11.824966,  11.824966,  11.824966,
+                 11.824966,  11.824966]], dtype=np.float32)
         _assert_data_segment('fake bitmask error', values)
     
     def test_reading_in_memory_fcs_file(self):
@@ -477,7 +480,6 @@ class TestFCSReader(unittest.TestCase):
 class TestMultiDtypeParsing(unittest.TestCase):
     """Verify that parsing of an fcs file that's composed of multiple dtypes works."""
     
-    @pytest.mark.skip(reason="Needs to be fixed, appears broken from initial commit")
     def test_parse_into_numpy_data_correctly(self):
         """Test that we can parse the data into a numpy matrix correctly.
 
@@ -490,8 +492,9 @@ class TestMultiDtypeParsing(unittest.TestCase):
         # ['<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u2', '<u4', '<u1']
         fcsparser = FCSParser(path=fname)
         # Make sure that data gets parsed as 2-dimensional
-        self.assertEquals(fcsparser.data.shape, (725, 10))
-    
+        # Due to mixed data types data is stored as array of a void data type
+        # We have to get size of array and void data type to compare to expected size
+        self.assertEqual((fcsparser.data.size,len(fcsparser.data.dtype)), (725, 10))    
     def test_parsed_into_dataframe_correctly(self):
         """Test that we can parse the data into a dataframe correctly."""
         fname = FILE_IDENTIFIER_TO_PATH['cyflow cube 8']
