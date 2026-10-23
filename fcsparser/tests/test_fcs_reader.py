@@ -522,3 +522,63 @@ class TestHeaderParsing(unittest.TestCase):
         self.assertEqual(200, len(fcs_parser.annotation))
         # Check one hard-coded key
         self.assertEqual(fcs_parser.annotation['$P9B'], 32)
+
+
+def _make_int_fcs(bits, byteord, rows):
+    """Build a minimal FCS 3.1 file with $DATATYPE/I/ and the given $PnB values."""
+    little = byteord == "1,2,3,4"
+    data = b"".join(
+        int(value).to_bytes(b // 8, "little" if little else "big")
+        for row in rows
+        for value, b in zip(row, bits)
+    )
+    keywords = [
+        ("$BYTEORD", byteord),
+        ("$DATATYPE", "I"),
+        ("$MODE", "L"),
+        ("$NEXTDATA", "0"),
+        ("$PAR", str(len(bits))),
+        ("$TOT", str(len(rows))),
+    ]
+    for i, b in enumerate(bits, 1):
+        keywords += [
+            ("$P{}B".format(i), str(b)),
+            ("$P{}E".format(i), "0,0"),
+            ("$P{}N".format(i), "P{}".format(i)),
+            ("$P{}R".format(i), str(2**b)),
+        ]
+    text_start = 58
+    data_start = 0
+    for _ in range(3):  # offsets change the TEXT length, so iterate to a fixed point
+        pairs = keywords + [
+            ("$BEGINDATA", str(data_start)),
+            ("$ENDDATA", str(data_start + len(data) - 1)),
+        ]
+        text = ("/" + "".join(k + "/" + v + "/" for k, v in pairs)).encode("ascii")
+        data_start = text_start + len(text)
+    data_end = data_start + len(data) - 1
+    offsets = (text_start, data_start - 1, data_start, data_end, 0, 0)
+    header = b"FCS3.1    " + b"".join(b"%8d" % offset for offset in offsets)
+    return header + text + data
+
+
+class TestOddWidthIntegers(unittest.TestCase):
+    """Integers whose $PnB is not a power-of-two number of bytes (e.g. 24 bits)."""
+
+    def _assert_parses(self, bits, byteord, rows):
+        parser = FCSParser.from_data(_make_int_fcs(bits, byteord, rows))
+        assert_array_equal(parser.dataframe.values, np.array(rows))
+
+    def test_24_bit_little_endian(self):
+        self._assert_parses([24, 24], "1,2,3,4", [[1, 70000], [16777215, 300000]])
+
+    def test_24_bit_big_endian(self):
+        self._assert_parses([24, 24], "4,3,2,1", [[1, 70000], [16777215, 300000]])
+
+    def test_24_bit_mixed_with_16_bit_little_endian(self):
+        rows = [[1, 2, 3], [70000, 65535, 16777215]]
+        self._assert_parses([24, 16, 24], "1,2,3,4", rows)
+
+    def test_24_bit_mixed_with_16_bit_big_endian(self):
+        rows = [[1, 2, 3], [70000, 65535, 16777215]]
+        self._assert_parses([24, 16, 24], "4,3,2,1", rows)

@@ -89,18 +89,24 @@ def fromfile(file, dtype, count, *args, **kwargs):
 
     # now, for each requested dtype.....
     ret_dtypes = []
+    padded_widths = []
     for field_idx, dt in enumerate(dtypes):
         dtype_type = dt[1]
         dtype_endian = dt[0]
         num_bytes = int(dt[2:])
+        # where this field starts in `ret`, which grows as earlier fields are padded
+        field_start = sum(padded_widths)
 
         # num_bytes & (num_bytes - 1) is 0 IFF num_bytes is a power of two
         # while num_bytes is NOT a power of two....
         while num_bytes & (num_bytes - 1) != 0:
-            # ...insert another COLUMN of NUL bytes at the front of the field....
-            ret = numpy.insert(
-                ret, sum(field_widths[0:field_idx]), numpy.zeros(count), axis=1
-            )
+            # ...insert another COLUMN of NUL bytes on the most significant side
+            # of the field: the front for big endian, the back for little endian....
+            if dtype_endian == "<":
+                pad_at = field_start + num_bytes
+            else:
+                pad_at = field_start
+            ret = numpy.insert(ret, pad_at, numpy.zeros(count), axis=1)
 
             # ....and increment the number of bytes for this field.
             num_bytes = num_bytes + 1
@@ -108,6 +114,7 @@ def fromfile(file, dtype, count, *args, **kwargs):
         # when we've got a field that's a power-of-two wide, append that field's
         # dtype to the list of record dtypes we're going to return
         ret_dtypes.append(dtype_endian + dtype_type + str(num_bytes))
+        padded_widths.append(num_bytes)
 
     # now, "cast" the newly padded array as the desired data types,
     # and return it.
