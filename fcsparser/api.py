@@ -440,7 +440,7 @@ class FCSParser(object):
         end = self.annotation["__header__"]["analysis end"]
         if start != 0 and end != 0:
             file_handle.seek(start, 0)
-            self._analysis = file_handle.read(end - start)
+            self._analysis = file_handle.read(end - start + 1)
         else:
             self._analysis = None
 

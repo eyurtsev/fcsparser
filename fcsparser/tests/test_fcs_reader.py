@@ -1,4 +1,5 @@
 import os
+import struct
 import timeit
 import unittest
 
@@ -522,3 +523,39 @@ class TestHeaderParsing(unittest.TestCase):
         self.assertEqual(200, len(fcs_parser.annotation))
         # Check one hard-coded key
         self.assertEqual(fcs_parser.annotation['$P9B'], 32)
+
+
+def test_analysis_includes_end_offset(tmp_path):
+    text = (
+        b"/$PAR/1/$TOT/1/$NEXTDATA/0/$BYTEORD/1,2,3,4/$DATATYPE/F/"
+        b"$MODE/L/$P1B/32/$P1E/0,0/$P1N/FSC-A/$P1R/262144/"
+    )
+    text += (
+        b"$BEGINDATA/00000000/$ENDDATA/00000000/"
+        b"$BEGINANALYSIS/00000000/$ENDANALYSIS/00000000/"
+        b"$BEGINSTEXT/0/$ENDSTEXT/0/"
+    )
+    data = struct.pack("<f", 1.5)
+    analysis = b"/QC/PASS/"
+    text_start = 58
+    data_start = text_start + len(text)
+    analysis_start = data_start + len(data)
+    analysis_end = analysis_start + len(analysis) - 1
+    for key, offset in (
+        (b"$BEGINDATA", data_start),
+        (b"$ENDDATA", analysis_start - 1),
+        (b"$BEGINANALYSIS", analysis_start),
+        (b"$ENDANALYSIS", analysis_end),
+    ):
+        text = text.replace(key + b"/00000000/", key + b"/%08d/" % offset)
+    header = b"FCS3.1    %8d%8d%8d%8d%8d%8d" % (
+        text_start, data_start - 1, data_start, analysis_start - 1,
+        analysis_start, analysis_end,
+    )
+    path = tmp_path / "analysis.fcs"
+    path.write_bytes(header + text + data + analysis)
+
+    with pytest.warns(UserWarning, match="ANALYSIS segment"):
+        parser = FCSParser(path)
+    assert_array_equal(parser.data, [[1.5]])
+    assert parser.analysis == analysis
